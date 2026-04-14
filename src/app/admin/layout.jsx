@@ -2,22 +2,38 @@
 
 import Sidebar from '@/components/layout/Sidebar';
 import Navbar from '@/components/layout/Navbar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation';
 
 export default function AdminLayout({ children }) {
   const token = useAuthStore((state) => state.token);
   const router = useRouter();
 
+  const [hydrated, setHydrated] = useState(false);
+
   useEffect(() => {
-    if (!token) {
-      router.push('/login');
+    setHydrated(useAuthStore.persist.hasHydrated());
+
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+    });
+
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (hydrated && !token) {
+      router.replace('/login');
     }
-  }, [token]);
+  }, [hydrated, token]);
+
+  if (!hydrated) {
+    return null; // bisa diganti spinner
+  }
 
   if (!token) {
-    return null; // or a loading spinner
+    return null;
   }
 
   return (

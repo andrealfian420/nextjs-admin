@@ -14,4 +14,11 @@ export const authService = {
 
     throw new Error('Invalid credentials');
   },
+
+  async forgotPassword(data) {
+    if (data.email) {
+      // Simulate sending a password reset email
+      return true;
+    }
+  }
 };
