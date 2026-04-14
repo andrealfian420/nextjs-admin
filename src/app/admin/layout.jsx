@@ -1,7 +1,25 @@
+'use client';
+
 import Sidebar from '@/components/layout/Sidebar';
 import Navbar from '@/components/layout/Navbar';
+import { useEffect } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { useRouter } from "next/navigation"
 
 export default function AdminLayout({ children }) {
+  const token = useAuthStore((state) => state.token);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!token) {
+      router.push('/login');
+    }
+  }, [token]);
+
+  if (!token) {
+    return null; // or a loading spinner
+  }
+
   return (
     <div className='flex h-screen font-sans bg-slate-50 text-slate-800 overflow-hidden'>
       <Sidebar />
