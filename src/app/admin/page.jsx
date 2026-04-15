@@ -1,5 +1,11 @@
 import PageHeader from '@/components/ui/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/Card';
 
 export default function AdminPage() {
   return (
@@ -7,31 +13,31 @@ export default function AdminPage() {
       <PageHeader title='Dashboard' description='Welcome to admin dashboard' />
 
       <div className='grid gap-6 md:grid-cols-3'>
-        <Card>
+        <Card className='bg-sky-600 text-white'>
           <CardHeader>
             <CardTitle>Total Users</CardTitle>
+            <CardDescription className='mt-2'>
+              <p className='text-2xl font-bold'>120</p>
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className='text-2xl font-bold'>120</p>
-          </CardContent>
         </Card>
 
-        <Card>
+        <Card className='bg-green-600 text-white'>
           <CardHeader>
             <CardTitle>Orders</CardTitle>
+            <CardDescription className='mt-2'>
+              <p className='text-2xl font-bold'>54</p>
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className='text-2xl font-bold'>54</p>
-          </CardContent>
         </Card>
 
-        <Card>
+        <Card className='bg-yellow-400 text-white'>
           <CardHeader>
             <CardTitle>Revenue</CardTitle>
+            <CardDescription className='mt-2'>
+              <p className='text-2xl font-bold'>$8,200</p>
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className='text-2xl font-bold'>$8,200</p>
-          </CardContent>
         </Card>
       </div>
     </div>

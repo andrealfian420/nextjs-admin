@@ -1,40 +1,51 @@
 'use client';
 
-import Sidebar from '@/components/layout/Sidebar';
-import Navbar from '@/components/layout/Navbar';
+import Sidebar from '@/components/layout/admin/Sidebar';
+import Navbar from '@/components/layout/admin/Navbar';
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
+import { useSidebarStore } from '@/store/useSidebarStore';
 
 export default function AdminLayout({ children }) {
   const token = useAuthStore((state) => state.token);
   const router = useRouter();
+  const checkScreenSize = useSidebarStore((state) => state.checkScreenSize);
+
+  useEffect(() => {
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  }, [checkScreenSize]);
 
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
-    setHydrated(useAuthStore.persist.hasHydrated());
+  // useEffect(() => {
+  //   setHydrated(useAuthStore.persist.hasHydrated());
 
-    const unsub = useAuthStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
+  //   const unsub = useAuthStore.persist.onFinishHydration(() => {
+  //     setHydrated(true);
+  //   });
 
-    return () => unsub();
-  }, []);
+  //   return () => unsub();
+  // }, []);
 
-  useEffect(() => {
-    if (hydrated && !token) {
-      router.replace('/login');
-    }
-  }, [hydrated, token]);
+  // useEffect(() => {
+  //   if (hydrated && !token) {
+  //     router.replace('/login');
+  //   }
+  // }, [hydrated, token]);
 
-  if (!hydrated) {
-    return null; // bisa diganti spinner
-  }
+  // if (!hydrated) {
+  //   return null; // bisa diganti spinner
+  // }
 
-  if (!token) {
-    return null;
-  }
+  // if (!token) {
+  //   return null;
+  // }
 
   return (
     <div className='flex h-screen font-sans bg-slate-50 text-slate-800 overflow-hidden'>

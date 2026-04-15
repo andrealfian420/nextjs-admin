@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { authService } from '@/services/authService';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -41,29 +41,29 @@ export default function LoginPage() {
     }
   };
 
-  useEffect(() => {
-    setHydrated(useAuthStore.persist.hasHydrated());
+  // useEffect(() => {
+  //   setHydrated(useAuthStore.persist.hasHydrated());
 
-    const unsub = useAuthStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
+  //   const unsub = useAuthStore.persist.onFinishHydration(() => {
+  //     setHydrated(true);
+  //   });
 
-    return () => unsub();
-  }, []);
+  //   return () => unsub();
+  // }, []);
 
-  useEffect(() => {
-    if (hydrated && token) {
-      router.replace('/admin');
-    }
-  }, [hydrated, token]);
+  // useEffect(() => {
+  //   if (hydrated && token) {
+  //     router.replace('/admin');
+  //   }
+  // }, [hydrated, token]);
 
-  if (!hydrated) {
-    return null;
-  }
+  // if (!hydrated) {
+  //   return null;
+  // }
 
-  if (token) {
-    return null;
-  }
+  // if (token) {
+  //   return null;
+  // }
 
   return (
     <div className='flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-100 to-slate-200'>
