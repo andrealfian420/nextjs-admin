@@ -183,7 +183,7 @@ export default function Sidebar() {
                       <div className='ml-6 flex flex-col gap-1 pt-1'>
                         {item.children.map((child) => {
                           const ChildIcon = child.icon;
-                          const isChildActive = pathname === child.href;
+                          const isChildActive = pathname.includes(child.href);
 
                           return (
                             <Link
