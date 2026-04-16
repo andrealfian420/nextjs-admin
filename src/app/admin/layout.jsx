@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { TooltipProvider } from '@/components/ui/Tooltip';
+import { Toaster } from '@/components/ui/Sonner';
 
 export default function AdminLayout({ children }) {
   const token = useAuthStore((state) => state.token);
@@ -61,6 +62,7 @@ export default function AdminLayout({ children }) {
           </main>
         </div>
       </div>
+      <Toaster />
     </TooltipProvider>
   );
 }

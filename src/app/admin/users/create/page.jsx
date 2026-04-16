@@ -50,9 +50,7 @@ export default function AdminUsersCreatePage() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className='bg-white p-4 rounded-lg'>
-        <UserForm />
-      </div>
+      <UserForm />
     </main>
   );
 }
