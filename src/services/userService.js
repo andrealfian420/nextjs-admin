@@ -68,4 +68,13 @@ export const userService = {
       },
     };
   },
+
+  // Simulate delete API call
+  async deleteUser(id) {
+    await new Promise((r) => setTimeout(r, 600));
+    const index = users.findIndex((u) => u.id === id);
+    if (index === -1) throw new Error('User not found');
+    users.splice(index, 1);
+    return { success: true };
+  },
 };

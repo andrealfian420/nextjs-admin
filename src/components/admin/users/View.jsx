@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import DataTable from '@/components/ui/DataTable/DataTable';
+import DeleteDialog from '@/components/ui/DeleteDialog';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/Tooltip';
+import { toast } from '@/components/ui/Toast';
 import { userService } from '@/services/userService';
 import {
   ArrowDown,
@@ -49,7 +52,7 @@ function PageActions() {
   );
 }
 
-function RowActions({ row }) {
+function RowActions({ row, onDeleteClick }) {
   return (
     <>
       <Tooltip>
@@ -71,7 +74,7 @@ function RowActions({ row }) {
             className='cursor-pointer'
             size='icon-sm'
             variant='destructive'
-            onClick={() => console.log('delete', row)}
+            onClick={() => onDeleteClick(row)}
           >
             <Trash2 size={14} />
           </Button>
@@ -104,14 +107,33 @@ const tableColumns = [
 ];
 
 export default function ViewUsers() {
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleDelete = async (row) => {
+    await userService.deleteUser(row.id);
+    setRefreshKey((key) => key + 1);
+    toast.success('Delete Successful', { description: `${row.name} has been removed.` });
+  };
+
   return (
     <div className='bg-white rounded-lg p-4'>
       <DataTable
         columns={tableColumns}
         fetchData={userService.getUsers}
         showNumbers
+        refreshKey={refreshKey}
         actions={<PageActions />}
-        rowActions={(row) => <RowActions row={row} />}
+        rowActions={(row) => (
+          <RowActions row={row} onDeleteClick={setDeleteTarget} />
+        )}
+      />
+
+      <DeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        row={deleteTarget}
+        onConfirm={handleDelete}
       />
     </div>
   );

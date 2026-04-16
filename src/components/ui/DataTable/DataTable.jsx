@@ -18,6 +18,7 @@ export default function DataTable({
   actions,
   rowActions,
   showNumbers = false,
+  refreshKey,
 }) {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState('');
@@ -84,7 +85,7 @@ export default function DataTable({
 
   useEffect(() => {
     loadData();
-  }, [page, search, sorting, limit]);
+  }, [page, search, sorting, limit, refreshKey]);
 
   const table = useReactTable({
     data,
