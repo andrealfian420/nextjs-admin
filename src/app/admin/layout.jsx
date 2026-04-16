@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { useSidebarStore } from '@/store/useSidebarStore';
+import { TooltipProvider } from '@/components/ui/Tooltip';
 
 export default function AdminLayout({ children }) {
   const token = useAuthStore((state) => state.token);
@@ -48,16 +49,18 @@ export default function AdminLayout({ children }) {
   // }
 
   return (
-    <div className='flex h-screen font-sans bg-slate-50 text-slate-800 overflow-hidden'>
-      <Sidebar />
+    <TooltipProvider>
+      <div className='flex h-screen font-sans bg-slate-50 text-slate-800 overflow-hidden'>
+        <Sidebar />
 
-      <div className='flex-1 flex flex-col transition-all duration-300'>
-        <Navbar />
+        <div className='flex-1 flex flex-col transition-all duration-300'>
+          <Navbar />
 
-        <main className='flex-1 overflow-y-auto p-6 sm:p-5 space-y-8'>
-          {children}
-        </main>
+          <main className='flex-1 overflow-y-auto p-6 sm:p-5 space-y-8'>
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
