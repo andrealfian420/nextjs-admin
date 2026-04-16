@@ -111,9 +111,17 @@ export default function ViewUsers() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleDelete = async (row) => {
-    await userService.deleteUser(row.id);
-    setRefreshKey((key) => key + 1);
-    toast.success('Delete Successful', { description: `${row.name} has been removed.` });
+    try {
+      await userService.deleteUser(row.id);
+      setRefreshKey((key) => key + 1);
+      toast.success('Delete Successful', {
+        description: `${row.name} has been removed.`,
+      });
+    } catch (error) {
+      toast.error('Delete Failed', {
+        description: `Failed to delete ${row.name}.`,
+      });
+    }
   };
 
   return (
