@@ -1,4 +1,4 @@
-const { create } = require('zustand');
+import { create } from 'zustand';
 
 // Sidebar store to manage the state of the sidebar (open/closed)
 export const useSidebarStore = create((set) => ({
