@@ -12,7 +12,6 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Button } from '@/components/ui/Button';
 
 export default function Navbar() {
   const router = useRouter();
@@ -26,8 +25,9 @@ export default function Navbar() {
   };
 
   // resolvedTheme is undefined before client hydration — used as mount guard
-  const toggleTheme = () =>
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  const toggleTheme = () => {
+    return setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  };
 
   return (
     <header className='h-14 bg-white dark:bg-slate-800 border-b border-transparent dark:border-slate-700 flex items-center justify-between px-6'>
@@ -42,7 +42,7 @@ export default function Navbar() {
       <div className='flex items-center gap-4'>
         {/* Theme toggle — only renders after client hydration (resolvedTheme is undefined on server) */}
         {resolvedTheme && (
-          <Button
+          <button
             onClick={toggleTheme}
             aria-label='Toggle theme'
             className='relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer'
@@ -52,12 +52,12 @@ export default function Navbar() {
             ) : (
               <MoonIcon size={18} className='text-slate-600' />
             )}
-          </Button>
+          </button>
         )}
 
-        {/* <Button className='relative p-2 rounded-lg hover:bg-slate-100 transition cursor-pointer'>
+        {/* <button className='relative p-2 rounded-lg hover:bg-slate-100 transition cursor-pointer'>
           <Bell size={18} className='text-slate-600 cursor-pointer' />
-        </Button> */}
+        </button> */}
 
         <div className='flex items-center gap-3'>
           <div className='h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center'>

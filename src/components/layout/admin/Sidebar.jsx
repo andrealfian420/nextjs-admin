@@ -252,7 +252,7 @@ export default function Sidebar() {
 
             <div className='flex flex-col'>
               <span className='text-sm font-medium text-slate-700 dark:text-slate-200'>
-                Admininstrator
+                Administrator
               </span>
               <span className='text-xs font-medium text-slate-500 dark:text-slate-400'>
                 Super Admin
