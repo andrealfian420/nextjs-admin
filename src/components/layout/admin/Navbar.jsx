@@ -34,19 +34,17 @@ export default function Navbar() {
 
       <div className='flex items-center gap-4'>
         {/* Theme toggle — only renders after client hydration (resolvedTheme is undefined on server) */}
-        {resolvedTheme && (
-          <button
-            onClick={toggleTheme}
-            aria-label='Toggle theme'
-            className='relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer'
-          >
-            {resolvedTheme === 'dark' ? (
-              <SunIcon size={18} className='text-slate-400' />
-            ) : (
-              <MoonIcon size={18} className='text-slate-600' />
-            )}
-          </button>
-        )}
+        <button
+          onClick={toggleTheme}
+          aria-label='Toggle theme'
+          className='relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer'
+        >
+          {resolvedTheme === 'dark' ? (
+            <SunIcon size={18} className='text-slate-400' />
+          ) : (
+            <MoonIcon size={18} className='text-slate-600' />
+          )}
+        </button>
 
         {/* <button className='relative p-2 rounded-lg hover:bg-slate-100 transition cursor-pointer'>
           <Bell size={18} className='text-slate-600 cursor-pointer' />
