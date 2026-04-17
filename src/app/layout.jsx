@@ -1,5 +1,6 @@
 import { ThemeProvider } from 'next-themes';
 import './globals.css';
+import AuthProvider from '@/components/providers/AuthProvider';
 
 export const metadata = {
   title: 'Next.js Admin',
@@ -10,14 +11,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang='en' suppressHydrationWarning>
       <body>
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='system'
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute='class'
+            defaultTheme='system'
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

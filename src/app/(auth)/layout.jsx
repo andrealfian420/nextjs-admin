@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 
 export default async function AuthLayout({ children }) {
   const cookiesStore = await cookies();
-  const token = cookiesStore.get('accessToken')?.value;
+  const token = cookiesStore.get('refreshToken')?.value;
 
   if (token) {
     redirect('/admin');

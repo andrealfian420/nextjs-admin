@@ -4,7 +4,7 @@ import ClientLayout from '@/components/layout/admin/ClientLayout';
 
 export default async function AdminLayout({ children }) {
   const cookiesStore = await cookies();
-  const token = cookiesStore.get('accessToken')?.value;
+  const token = cookiesStore.get('refreshToken')?.value;
 
   if (!token) {
     redirect('/login');
