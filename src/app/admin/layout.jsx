@@ -51,7 +51,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <TooltipProvider>
-      <div className='flex h-screen font-sans bg-slate-50 text-slate-800 overflow-hidden'>
+      <div className='flex h-screen font-sans bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-hidden'>
         <Sidebar />
 
         <div className='flex-1 flex flex-col transition-all duration-300'>

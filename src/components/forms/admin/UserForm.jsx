@@ -153,7 +153,7 @@ export default function UserForm({ data = {} }) {
   };
 
   return (
-    <div className='bg-white p-4 rounded-lg'>
+    <div className='bg-white dark:bg-slate-800 p-4 rounded-lg'>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           <div className='space-y-1.5'>

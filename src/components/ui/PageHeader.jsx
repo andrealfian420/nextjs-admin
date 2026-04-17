@@ -5,7 +5,9 @@ export default function PageHeader({ title, description, actions }) {
         <h1 className='text-2xl font-bold'>{title}</h1>
 
         {description && (
-          <p className='text-sm text-slate-500 mt-1'>{description}</p>
+          <p className='text-sm text-slate-500 dark:text-slate-400 mt-1'>
+            {description}
+          </p>
         )}
       </div>
 

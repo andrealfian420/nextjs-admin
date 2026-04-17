@@ -37,7 +37,7 @@ export default function DataTable({
             id: '_no',
             header: '#',
             cell: ({ row }) => (
-              <span className='text-slate-400 font-medium'>
+              <span className='text-slate-400 dark:text-slate-500 font-medium'>
                 {(page - 1) * limit + row.index + 1}
               </span>
             ),
@@ -115,15 +115,15 @@ export default function DataTable({
         </div>
       </div>
 
-      <div className='rounded-xl border border-slate-200 shadow-sm overflow-hidden bg-white'>
+      <div className='rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden bg-white dark:bg-slate-800'>
         <table className='w-full text-sm'>
           <thead>
-            <tr className='border-b border-slate-200 bg-slate-50'>
+            <tr className='border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40'>
               {table.getHeaderGroups().map((headerGroup) =>
                 headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className='text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap'
+                    className='text-left px-5 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap'
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -135,13 +135,13 @@ export default function DataTable({
             </tr>
           </thead>
 
-          <tbody className='divide-y divide-slate-100'>
+          <tbody className='divide-y divide-slate-100 dark:divide-slate-700'>
             {loading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className='animate-pulse'>
                   {tableColumns.map((_, j) => (
                     <td key={j} className='px-5 py-4'>
-                      <div className='h-4 bg-slate-100 rounded-md w-3/4' />
+                      <div className='h-4 bg-slate-100 dark:bg-slate-700 rounded-md w-3/4' />
                     </td>
                   ))}
                 </tr>
@@ -150,10 +150,10 @@ export default function DataTable({
             {!loading && data.length === 0 && (
               <tr>
                 <td colSpan={columns.length}>
-                  <div className='flex flex-col items-center justify-center py-16 text-slate-400'>
+                  <div className='flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500'>
                     <svg
                       xmlns='http://www.w3.org/2000/svg'
-                      className='size-10 mb-3 text-slate-300'
+                      className='size-10 mb-3 text-slate-300 dark:text-slate-600'
                       fill='none'
                       viewBox='0 0 24 24'
                       stroke='currentColor'
@@ -166,7 +166,7 @@ export default function DataTable({
                       />
                     </svg>
                     <p className='text-sm font-medium'>No data found</p>
-                    <p className='text-xs mt-1 text-slate-300'>
+                    <p className='text-xs mt-1 text-slate-300 dark:text-slate-500'>
                       Try adjusting your search query
                     </p>
                   </div>
@@ -178,12 +178,17 @@ export default function DataTable({
               table.getRowModel().rows.map((row, rowIndex) => (
                 <tr
                   key={row.id}
-                  className={`transition-colors hover:bg-slate-50 ${
-                    rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
+                  className={`transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40 ${
+                    rowIndex % 2 === 0
+                      ? 'bg-white dark:bg-slate-800'
+                      : 'bg-slate-50/50 dark:bg-slate-700/20'
                   }`}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className='px-5 py-3.5 text-slate-700'>
+                    <td
+                      key={cell.id}
+                      className='px-5 py-3.5 text-slate-700 dark:text-slate-300'
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),

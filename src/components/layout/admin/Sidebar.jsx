@@ -118,7 +118,7 @@ export default function Sidebar() {
           h-full lg:h-auto
           z-50 lg:z-auto
           flex flex-col flex-shrink-0
-          bg-white shadow-[2px_0_12px_0_rgba(0,0,0,0.06)]
+          bg-white dark:bg-slate-800 shadow-[2px_0_12px_0_rgba(0,0,0,0.06)]
           overflow-hidden
           transition-all duration-300 ease-in-out
           ${
@@ -129,7 +129,7 @@ export default function Sidebar() {
         `}
       >
         <div className='h-14 flex items-center px-6 flex-shrink-0'>
-          <h1 className='font-semibold text-lg tracking-tight whitespace-nowrap'>
+          <h1 className='font-semibold text-lg tracking-tight whitespace-nowrap text-slate-800 dark:text-slate-100'>
             Admin Panel
           </h1>
         </div>
@@ -140,7 +140,7 @@ export default function Sidebar() {
               return (
                 <div
                   key={generateRandomKey()}
-                  className='border-t border-slate-200 my-2'
+                  className='border-t border-slate-200 dark:border-slate-700 my-2'
                 />
               );
             }
@@ -160,8 +160,8 @@ export default function Sidebar() {
                     onClick={() => toggleAccordion(item.key)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
                       hasActiveChild
-                        ? 'text-slate-900'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        ? 'text-slate-900 dark:text-slate-100'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
                     }`}
                   >
                     <Icon size={18} />
@@ -191,8 +191,8 @@ export default function Sidebar() {
                               href={child.href}
                               className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors whitespace-nowrap ${
                                 isChildActive
-                                  ? 'bg-slate-100 font-medium text-slate-900'
-                                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                  ? 'bg-slate-100 dark:bg-slate-700 font-medium text-slate-900 dark:text-slate-100'
+                                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
                               }`}
                             >
                               <ChildIcon size={16} />
@@ -214,8 +214,8 @@ export default function Sidebar() {
                 onClick={() => setOpenAccordions(new Set())}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                   isActive
-                    ? 'bg-slate-100 font-medium text-slate-900'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-slate-100 dark:bg-slate-700 font-medium text-slate-900 dark:text-slate-100'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
                 <Icon size={18} />
@@ -225,20 +225,23 @@ export default function Sidebar() {
           })}
         </nav>
 
-        <div className='h-14 flex items-center px-6 flex-shrink-0'>
+        <div className='h-14 flex items-center px-6 flex-shrink-0 border-t border-slate-200 dark:border-slate-700'>
           <div className='flex items-center gap-3'>
-            <div className='h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center'>
+            <div className='h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center'>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <User size={16} className='text-slate-600 cursor-pointer' />
+                  <User
+                    size={16}
+                    className='text-slate-600 dark:text-slate-300 cursor-pointer'
+                  />
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent className='mb-4 p-0 min-w-[180px]'>
-                  <DropdownMenuItem className='w-full h-full hover:bg-slate-100 hover:text-slate-900 p-2 rounded-md transition cursor-pointer'>
+                  <DropdownMenuItem className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'>
                     <Link href='/profile'>Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className='w-full h-full hover:bg-slate-100 hover:text-slate-900 p-2 rounded-md transition cursor-pointer'
+                    className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'
                     onClick={handleLogout}
                   >
                     Logout
@@ -248,9 +251,11 @@ export default function Sidebar() {
             </div>
 
             <div className='flex flex-col'>
-              <span className='text-sm font-medium text-slate-700'>Admin</span>
-              <span className='text-xs font-medium text-slate-500'>
-                Backend User
+              <span className='text-sm font-medium text-slate-700 dark:text-slate-200'>
+                Admininstrator
+              </span>
+              <span className='text-xs font-medium text-slate-500 dark:text-slate-400'>
+                Super Admin
               </span>
             </div>
           </div>

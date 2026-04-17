@@ -9,7 +9,7 @@ import {
 
 export default function ViewDashboard() {
   return (
-    <div className='bg-white rounded-lg p-4'>
+    <div className='bg-white dark:bg-slate-800 rounded-lg p-4'>
       <PageHeader title='Dashboard' description='Welcome to admin dashboard' />
 
       <div className='grid gap-6 md:grid-cols-3'>

@@ -32,17 +32,17 @@ export default function ForgotPasswordForm() {
   };
 
   return (
-    <div className='flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-100 to-slate-200'>
+    <div className='flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800'>
       <form
         onSubmit={handleForgotPassword}
-        className='bg-white p-10 rounded-2xl shadow-xl w-96'
+        className='bg-white p-10 rounded-2xl shadow-xl w-96 dark:bg-slate-800 dark:shadow-slate-900/50'
       >
         <div className='space-y-6'>
           <div className='text-center space-y-1'>
-            <h1 className='text-2xl font-bold text-slate-800'>
+            <h1 className='text-2xl font-bold text-slate-800 dark:text-slate-100'>
               Forgot Password
             </h1>
-            <p className='text-sm text-slate-500'>
+            <p className='text-sm text-slate-500 dark:text-slate-400'>
               Enter your email and we will send you a reset link
             </p>
           </div>
@@ -70,7 +70,7 @@ export default function ForgotPasswordForm() {
           />
 
           <Button
-            className='w-full bg-black text-white p-2.5 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-slate-800 transition disabled:opacity-70 cursor-pointer'
+            className='w-full bg-black text-white p-2.5 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-slate-800 transition disabled:opacity-70 cursor-pointer dark:bg-slate-700 dark:hover:bg-slate-600'
             type='submit'
             disabled={isLoading}
           >
@@ -88,7 +88,7 @@ export default function ForgotPasswordForm() {
         <div className='flex justify-center mt-6'>
           <Link
             href='/login'
-            className='text-sm text-slate-600 hover:underline'
+            className='text-sm text-slate-600 hover:underline dark:text-slate-400 dark:hover:text-slate-300'
           >
             Back to Login
           </Link>

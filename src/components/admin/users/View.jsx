@@ -26,15 +26,15 @@ function SortHeader({ column, label }) {
   return (
     <button
       onClick={() => column.toggleSorting()}
-      className='flex items-center gap-1 hover:text-slate-700 transition-colors'
+      className='flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200 transition-colors'
     >
       {label}
       {sorted === 'asc' ? (
-        <ArrowUp size={12} className='text-slate-700' />
+        <ArrowUp size={12} className='text-slate-700 dark:text-slate-300' />
       ) : sorted === 'desc' ? (
-        <ArrowDown size={12} className='text-slate-700' />
+        <ArrowDown size={12} className='text-slate-700 dark:text-slate-300' />
       ) : (
-        <ArrowUpDown size={12} className='text-slate-400' />
+        <ArrowUpDown size={12} className='text-slate-400 dark:text-slate-600' />
       )}
     </button>
   );
@@ -125,7 +125,7 @@ export default function ViewUsers() {
   };
 
   return (
-    <div className='bg-white rounded-lg p-4'>
+    <div className='bg-white dark:bg-slate-800 rounded-lg p-4'>
       <DataTable
         columns={tableColumns}
         fetchData={userService.getUsers}

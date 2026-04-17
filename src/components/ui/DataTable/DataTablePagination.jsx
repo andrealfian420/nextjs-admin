@@ -21,7 +21,7 @@ export default function DataTablePagination({
   return (
     <div className='flex items-center justify-between gap-3 mt-2'>
       {/* Per-page selector */}
-      <div className='flex items-center gap-2 text-sm text-slate-500'>
+      <div className='flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400'>
         <span className='whitespace-nowrap'>Rows per page</span>
         <Select
           value={String(limit)}
@@ -33,7 +33,7 @@ export default function DataTablePagination({
           <SelectContent
             position='popper'
             side='top'
-            className='bg-white border border-slate-200 shadow-md'
+            className='bg-white border border-slate-200 dark:border-slate-700 shadow-md'
           >
             {LIMIT_OPTIONS.map((opt) => (
               <SelectItem
@@ -71,8 +71,8 @@ export default function DataTablePagination({
                 link.active
                   ? 'border-slate-700 bg-slate-700 text-white shadow-sm'
                   : !link.url
-                    ? 'border-slate-200 bg-white text-slate-300 cursor-default'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-100 hover:text-slate-800',
+                    ? 'border-slate-200 bg-white text-slate-300 cursor-default dark:border-slate-700 dark:bg-slate-800 dark:text-slate-600'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-100 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200',
               ].join(' ')}
             >
               <span dangerouslySetInnerHTML={{ __html: label }} />

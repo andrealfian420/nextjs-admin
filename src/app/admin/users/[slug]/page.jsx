@@ -21,7 +21,7 @@ const dummy = {
 export default function AdminUsersEditPage() {
   return (
     <main className='space-y-1'>
-      <h1 className='text-xl font-semibold text-slate-800'>
+      <h1 className='text-xl font-semibold text-slate-800 dark:text-slate-100'>
         Edit User {dummy.full_name}
       </h1>
 
@@ -31,30 +31,30 @@ export default function AdminUsersEditPage() {
             <BreadcrumbLink asChild>
               <Link
                 href='/admin'
-                className='text-slate-400 hover:text-slate-600 text-sm transition-colors'
+                className='text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 text-sm transition-colors'
               >
                 Dashboard
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
 
-          <BreadcrumbSeparator className='text-slate-300' />
+          <BreadcrumbSeparator className='text-slate-300 dark:text-slate-600' />
 
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
               <Link
                 href='/admin/users'
-                className='text-slate-400 hover:text-slate-600 text-sm transition-colors'
+                className='text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 text-sm transition-colors'
               >
                 Users
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
 
-          <BreadcrumbSeparator className='text-slate-300' />
+          <BreadcrumbSeparator className='text-slate-300 dark:text-slate-600' />
 
           <BreadcrumbItem>
-            <BreadcrumbPage className='text-slate-600 text-sm'>
+            <BreadcrumbPage className='text-slate-600 dark:text-slate-400 text-sm'>
               Edit User {dummy.full_name}
             </BreadcrumbPage>
           </BreadcrumbItem>

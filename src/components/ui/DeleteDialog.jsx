@@ -66,25 +66,25 @@ export default function DeleteDialog({
         <DialogPrimitive.Content
           className={cn(
             'fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2',
-            'rounded-2xl bg-white p-6 text-sm shadow-xl outline-none ring-1 ring-black/5',
+            'rounded-2xl bg-white p-6 text-sm shadow-xl outline-none ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10',
             'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
             'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           )}
         >
           {/* Icon */}
-          <div className='mb-4 flex size-12 items-center justify-center rounded-full bg-red-50 ring-8 ring-red-50/60'>
+          <div className='mb-4 flex size-12 items-center justify-center rounded-full bg-red-50 ring-8 ring-red-50/60 dark:bg-red-950/30 dark:ring-red-950/40'>
             <Trash2Icon className='size-5 text-red-500' />
           </div>
 
           <DialogHeader className='mb-4'>
-            <DialogTitle className='text-base font-semibold text-slate-800'>
+            <DialogTitle className='text-base font-semibold text-slate-800 dark:text-slate-100'>
               {title}
             </DialogTitle>
-            <DialogDescription className='mt-1.5 text-sm leading-relaxed text-slate-500'>
+            <DialogDescription className='mt-1.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400'>
               {description ?? (
                 <>
                   Are you sure you want to delete{' '}
-                  <span className='font-medium text-slate-700'>
+                  <span className='font-medium text-slate-700 dark:text-slate-300'>
                     {displayRow?.name ?? displayRow?.title ?? 'this item'}
                   </span>
                   ? This action{' '}
@@ -107,7 +107,7 @@ export default function DeleteDialog({
               Cancel
             </Button>
             <Button
-              className='flex-1 cursor-pointer bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500/40'
+              className='flex-1 cursor-pointer bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500/40 dark:bg-red-600 dark:hover:bg-red-700'
               onClick={handleConfirm}
               disabled={loading}
             >
