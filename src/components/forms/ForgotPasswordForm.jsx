@@ -25,7 +25,11 @@ export default function ForgotPasswordForm() {
 
       setSuccess(true);
     } catch (error) {
-      setError(error?.message || 'Something went wrong. Please try again.');
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          'Something went wrong. Please try again.',
+      );
     } finally {
       setIsLoading(false);
     }

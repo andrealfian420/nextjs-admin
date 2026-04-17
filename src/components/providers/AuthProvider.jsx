@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import axios from 'axios';
+import { authService } from '@/services/authService';
 import { useAuthStore } from '../../store/useAuthStore';
 
 export default function AuthProvider({ children }) {
@@ -11,11 +11,7 @@ export default function AuthProvider({ children }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const res = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-          {},
-          { withCredentials: true },
-        );
+        const res = await authService.refreshToken();
 
         const token = res.data.data.accessToken;
         setAccessToken(token);

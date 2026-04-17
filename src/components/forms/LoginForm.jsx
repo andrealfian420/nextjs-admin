@@ -14,7 +14,7 @@ import { toast } from '@/components/ui/Toast';
 
 export default function LoginForm() {
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
+  const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,9 +36,7 @@ export default function LoginForm() {
     try {
       const res = await authService.login({ email, password });
 
-      if (res?.data?.user) {
-        setUser(res.data.user);
-      }
+      setAccessToken(res.data.data.accessToken);
 
       const duration = 2000;
 
@@ -52,15 +50,18 @@ export default function LoginForm() {
         router.push('/admin');
       }, duration);
     } catch (err) {
-      if (err.errors) {
+      const apiErrors = err.response?.data?.errors;
+      const apiMessage = err.response?.data?.message;
+
+      if (apiErrors) {
         const formatted = {};
-        err.errors.forEach((e) => {
+        apiErrors.forEach((e) => {
           formatted[e.field] = e.message;
         });
         setErrors(formatted);
       } else {
         toast.error(
-          err?.message || 'Login failed. Please check your credentials.',
+          apiMessage || 'Login failed. Please check your credentials.',
           {
             position: 'top-center',
             duration: 10000,

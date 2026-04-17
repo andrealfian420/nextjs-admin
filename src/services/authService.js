@@ -1,26 +1,14 @@
-import { apiFetch } from '@/lib/api';
+import api from '@/lib/axios';
 
 // Authentication service for handling login, registration, logout, and token refresh
 export const authService = {
-  login: (data) =>
-    apiFetch('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  // _retry: true prevents the 401 interceptor from attempting a token refresh
+  // on auth endpoints — a 401 here means invalid credentials, not an expired token.
+  login: (data) => api.post('/auth/login', data, { _retry: true }),
 
-  register: (data) =>
-    apiFetch('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  register: (data) => api.post('/auth/register', data, { _retry: true }),
 
-  logout: () =>
-    apiFetch('/auth/logout', {
-      method: 'POST',
-    }),
+  logout: () => api.post('/auth/logout'),
 
-  refreshToken: () =>
-    apiFetch('/auth/refresh-token', {
-      method: 'POST',
-    }),
+  refreshToken: () => api.post('/auth/refresh', {}, { _retry: true }),
 };
