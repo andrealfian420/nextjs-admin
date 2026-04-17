@@ -11,11 +11,17 @@ import {
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useLogout } from '@/hooks/useLogout';
+import { useEffect, useState } from 'react';
 
 export default function Navbar() {
   const setIsOpen = useSidebarStore((state) => state.toggleSidebar);
   const { resolvedTheme, setTheme } = useTheme();
   const { handleLogout } = useLogout();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // resolvedTheme is undefined before client hydration — used as mount guard
   const toggleTheme = () => {
@@ -33,18 +39,20 @@ export default function Navbar() {
       </div>
 
       <div className='flex items-center gap-4'>
-        {/* Theme toggle — only renders after client hydration (resolvedTheme is undefined on server) */}
-        <button
-          onClick={toggleTheme}
-          aria-label='Toggle theme'
-          className='relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer'
-        >
-          {resolvedTheme === 'dark' ? (
-            <SunIcon size={18} className='text-slate-400' />
-          ) : (
-            <MoonIcon size={18} className='text-slate-600' />
-          )}
-        </button>
+        {/* Theme toggle — only renders after mounted */}
+        {mounted && (
+          <button
+            onClick={toggleTheme}
+            aria-label='Toggle theme'
+            className='relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer'
+          >
+            {resolvedTheme === 'dark' ? (
+              <SunIcon size={18} className='text-slate-400' />
+            ) : (
+              <MoonIcon size={18} className='text-slate-600' />
+            )}
+          </button>
+        )}
 
         {/* <button className='relative p-2 rounded-lg hover:bg-slate-100 transition cursor-pointer'>
           <Bell size={18} className='text-slate-600 cursor-pointer' />
