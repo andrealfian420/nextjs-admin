@@ -1,24 +1,26 @@
+import { apiFetch } from '@/lib/api';
+
+// Authentication service for handling login, registration, logout, and token refresh
 export const authService = {
-  // This is a mock login function. In a real application, you would make an API call to your backend here.
-  async login(data) {
-    if (data.email === 'admin@admin.com' && data.password === 'password') {
-      return {
-        user: {
-          id: 1,
-          name: 'Admin',
-          email: 'admin@admin.com',
-        },
-        token: 'sample_token',
-      };
-    }
+  login: (data) =>
+    apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
-    throw new Error('Invalid credentials');
-  },
+  register: (data) =>
+    apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
-  async forgotPassword(data) {
-    if (data.email) {
-      // Simulate sending a password reset email
-      return true;
-    }
-  }
+  logout: () =>
+    apiFetch('/auth/logout', {
+      method: 'POST',
+    }),
+
+  refreshToken: () =>
+    apiFetch('/auth/refresh-token', {
+      method: 'POST',
+    }),
 };

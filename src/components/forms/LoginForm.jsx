@@ -9,67 +9,68 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { toast } from '@/components/ui/Toast';
 
 export default function LoginForm() {
-  const token = useAuthStore((state) => state.token);
   const router = useRouter();
-
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [hydrated, setHydrated] = useState(false);
+
+  const [errors, setErrors] = useState({}); // field error
 
   const togglePassword = () => {
-    setIsPasswordVisible(!isPasswordVisible);
+    setIsPasswordVisible((prev) => !prev);
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
     setIsLoading(true);
-    setError(null);
+    setErrors({});
 
     try {
       const res = await authService.login({ email, password });
 
-      setAuth(res.token, res.user);
-      router.push('/admin');
-    } catch (error) {
-      setError(
-        error?.message || 'Login failed. Please check your credentials.',
-      );
-    } finally {
+      if (res?.data?.user) {
+        setUser(res.data.user);
+      }
+
+      const duration = 2000;
+
+      toast.success('Login successful!', {
+        position: 'top-center',
+        duration,
+      });
+
+      setTimeout(() => {
+        setIsLoading(false);
+        router.push('/admin');
+      }, duration);
+    } catch (err) {
+      if (err.errors) {
+        const formatted = {};
+        err.errors.forEach((e) => {
+          formatted[e.field] = e.message;
+        });
+        setErrors(formatted);
+      } else {
+        toast.error(
+          err?.message || 'Login failed. Please check your credentials.',
+          {
+            position: 'top-center',
+            duration: 10000,
+          },
+        );
+      }
+
       setIsLoading(false);
     }
   };
-
-  // useEffect(() => {
-  //   setHydrated(useAuthStore.persist.hasHydrated());
-
-  //   const unsub = useAuthStore.persist.onFinishHydration(() => {
-  //     setHydrated(true);
-  //   });
-
-  //   return () => unsub();
-  // }, []);
-
-  // useEffect(() => {
-  //   if (hydrated && token) {
-  //     router.replace('/admin');
-  //   }
-  // }, [hydrated, token]);
-
-  // if (!hydrated) {
-  //   return null;
-  // }
-
-  // if (token) {
-  //   return null;
-  // }
 
   return (
     <div className='flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800'>
@@ -87,36 +88,49 @@ export default function LoginForm() {
             </p>
           </div>
 
-          {error && (
-            <Alert variant='destructive' onDismiss={() => setError(null)}>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <Input
-            type='email'
-            placeholder='Email'
-            className='focus:ring-2 focus:ring-black'
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-
-          <div className='relative'>
+          <div className='space-y-1'>
             <Input
-              type={isPasswordVisible ? 'text' : 'password'}
-              placeholder='Password'
+              type='email'
+              placeholder='Email'
               className='focus:ring-2 focus:ring-black'
-              onChange={(e) => setPassword(e.target.value)}
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setErrors((prev) => ({ ...prev, email: null }));
+              }}
               required
             />
+            {errors.email && (
+              <p className='text-xs text-red-500'>{errors.email}</p>
+            )}
+          </div>
 
-            <Button
-              onClick={togglePassword}
-              type='button'
-              className='absolute right-2 p-1 rounded cursor-pointer'
-            >
-              {isPasswordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
-            </Button>
+          <div className='space-y-1'>
+            <div className='relative'>
+              <Input
+                type={isPasswordVisible ? 'text' : 'password'}
+                placeholder='Password'
+                className='focus:ring-2 focus:ring-black'
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrors((prev) => ({ ...prev, password: null }));
+                }}
+                required
+              />
+
+              <Button
+                onClick={togglePassword}
+                type='button'
+                className='absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded cursor-pointer'
+              >
+                {isPasswordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
+              </Button>
+            </div>
+
+            {errors.password && (
+              <p className='text-xs text-red-500'>{errors.password}</p>
+            )}
           </div>
 
           <Button

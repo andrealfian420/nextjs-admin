@@ -9,20 +9,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import Link from 'next/link';
-import { useAuthStore } from '@/store/useAuthStore';
-import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
+import { useLogout } from '@/hooks/useLogout';
 
 export default function Navbar() {
-  const router = useRouter();
   const setIsOpen = useSidebarStore((state) => state.toggleSidebar);
-  const logout = useAuthStore((state) => state.logout);
   const { resolvedTheme, setTheme } = useTheme();
-
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
+  const { handleLogout } = useLogout();
 
   // resolvedTheme is undefined before client hydration — used as mount guard
   const toggleTheme = () => {

@@ -21,6 +21,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import { User } from 'lucide-react';
+import { authService } from '@/services/authService';
+import { toast } from 'sonner';
+import { useLogout } from '@/hooks/useLogout';
 
 const generateRandomKey = () => Math.random().toString(36).substring(2, 9);
 
@@ -67,14 +70,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const isOpen = useSidebarStore((state) => state.isOpen);
   const close = useSidebarStore((state) => state.close);
-  const logout = useAuthStore((state) => state.logout);
-  const router = useRouter();
-
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
-
+  const { handleLogout } = useLogout();
   const [openAccordions, setOpenAccordions] = useState(new Set());
 
   // watch route changes to auto-open accordions with active child

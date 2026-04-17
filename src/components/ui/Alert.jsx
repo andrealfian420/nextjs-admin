@@ -23,7 +23,7 @@ const alertVariants = cva(
         warning:
           'border-amber-200 bg-amber-50 text-amber-900 [&>svg]:text-amber-500 dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-200',
         destructive:
-          'border-destructive/30 bg-destructive/10 text-destructive [&>svg]:text-destructive dark:border-destructive/40 dark:bg-destructive/20',
+          'border-red-500/30 bg-red-500/10 text-red-500 [&>svg]:text-red-500 dark:border-red-500/40 dark:bg-red-500/20',
       },
     },
     defaultVariants: {
@@ -100,7 +100,7 @@ function Alert({
           type='button'
           aria-label='Dismiss'
           onClick={onDismiss}
-          className='absolute top-3 right-3 rounded-sm opacity-60 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          className='absolute top-3 right-3 rounded-sm opacity-60 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer'
         >
           <XIcon className='size-4' />
         </button>
