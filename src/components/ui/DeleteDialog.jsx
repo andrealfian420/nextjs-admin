@@ -61,47 +61,64 @@ export default function DeleteDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPortal>
-        <DialogOverlay className='bg-black/50 backdrop-blur-none duration-0 data-open:animate-none data-closed:animate-none' />
+        <DialogOverlay className='bg-black/40 supports-backdrop-filter:backdrop-blur-sm duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0' />
 
         <DialogPrimitive.Content
           className={cn(
-            'fixed top-1/2 left-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
-            'gap-6 rounded-xl bg-white p-6 text-sm shadow-lg outline-none',
-            'data-open:animate-none data-closed:animate-none',
+            'fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2',
+            'rounded-2xl bg-white p-6 text-sm shadow-xl outline-none ring-1 ring-black/5',
+            'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
+            'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           )}
         >
-          <DialogHeader>
-            <div className='flex size-10 items-center justify-center rounded-full bg-red-100 mb-1'>
-              <Trash2Icon className='size-5 text-red-600' />
-            </div>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription className='mt-3'>
+          {/* Icon */}
+          <div className='mb-4 flex size-12 items-center justify-center rounded-full bg-red-50 ring-8 ring-red-50/60'>
+            <Trash2Icon className='size-5 text-red-500' />
+          </div>
+
+          <DialogHeader className='mb-4'>
+            <DialogTitle className='text-base font-semibold text-slate-800'>
+              {title}
+            </DialogTitle>
+            <DialogDescription className='mt-1.5 text-sm leading-relaxed text-slate-500'>
               {description ?? (
                 <>
                   Are you sure you want to delete{' '}
-                  <span className='font-medium text-foreground'>
+                  <span className='font-medium text-slate-700'>
                     {displayRow?.name ?? displayRow?.title ?? 'this item'}
                   </span>
-                  ? This action cannot be undone.
+                  ? This action{' '}
+                  <span className='font-medium text-red-500'>
+                    cannot be undone
+                  </span>
+                  .
                 </>
               )}
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter>
+          <DialogFooter className='gap-2 sm:gap-2'>
             <Button
-              className='cursor-pointer hover:bg-slate-100 hover:rounded-md p-3 hover:text-slate-900'
+              variant='outline'
+              className='flex-1 cursor-pointer'
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
               Cancel
             </Button>
             <Button
-              className='cursor-pointer hover:bg-red-600 hover:rounded-md p-3 hover:text-white'
+              className='flex-1 cursor-pointer bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500/40'
               onClick={handleConfirm}
               disabled={loading}
             >
-              {loading ? 'Deleting...' : 'Delete'}
+              {loading ? (
+                <>
+                  <span className='size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent' />
+                  Deleting…
+                </>
+              ) : (
+                'Delete'
+              )}
             </Button>
           </DialogFooter>
         </DialogPrimitive.Content>
