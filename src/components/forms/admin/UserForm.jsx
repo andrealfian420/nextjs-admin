@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select';
+import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/Toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, RefreshCwIcon, Upload, X } from 'lucide-react';
@@ -164,7 +165,7 @@ export default function UserForm({ data = {} }) {
               id='full_name'
               type='text'
               placeholder='John Doe'
-              className={`${errors.full_name ? 'border-red-500' : ''}`}
+              aria-invalid={!!errors.full_name}
               {...register('full_name')}
             />
             <p className='text-xs text-red-500 min-h-2'>
@@ -181,7 +182,7 @@ export default function UserForm({ data = {} }) {
               id='email'
               type='email'
               placeholder='user@example.com'
-              className={`${errors.email ? 'border-red-500' : ''}`}
+              aria-invalid={!!errors.email}
               {...register('email')}
             />
             <p className='text-xs text-red-500 min-h-2'>
@@ -204,7 +205,7 @@ export default function UserForm({ data = {} }) {
                 id='password'
                 type={isPasswordVisible ? 'text' : 'password'}
                 placeholder={isEdit ? '••••••••' : 'Min. 8 characters'}
-                className={`${errors.password ? 'border-red-500' : ''}`}
+                aria-invalid={!!errors.password}
                 {...register('password')}
               />
               <Button
@@ -234,11 +235,12 @@ export default function UserForm({ data = {} }) {
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger
                     id='role_id'
-                    className={`w-full ${errors.role_id ? 'border-red-500' : ''}`}
+                    aria-invalid={!!errors.role_id}
+                    className='w-full'
                   >
                     <SelectValue placeholder='Select a role' />
                   </SelectTrigger>
-                  <SelectContent position='popper' className='bg-white'>
+                  <SelectContent position='popper'>
                     {DUMMY_ROLES.map((role) => (
                       <SelectItem
                         key={role.value}
@@ -310,13 +312,16 @@ export default function UserForm({ data = {} }) {
             type='submit'
             disabled={isSubmitting}
           >
-            {isSubmitting
-              ? isEdit
-                ? 'Saving…'
-                : 'Creating…'
-              : isEdit
-                ? 'Save Changes'
-                : 'Create User'}
+            {isSubmitting ? (
+              <>
+                <Spinner size='sm' className='text-white' />
+                {isEdit ? 'Saving…' : 'Creating…'}
+              </>
+            ) : isEdit ? (
+              'Save Changes'
+            ) : (
+              'Create User'
+            )}
           </Button>
           <Button
             type='button'

@@ -1,28 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { authService } from '@/services/authService';
 import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Spinner } from '@/components/ui/Spinner';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 import Link from 'next/link';
 
 export default function ForgotPasswordForm() {
-  const router = useRouter();
-
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
+    setSuccess(false);
 
     try {
       await authService.forgotPassword({ email });
 
-      alert('Password reset link has been sent to your email.');
-      router.push('/login');
+      setSuccess(true);
     } catch (error) {
-      alert(error.message);
+      setError(error?.message || 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -44,6 +47,20 @@ export default function ForgotPasswordForm() {
             </p>
           </div>
 
+          {error && (
+            <Alert variant='destructive' onDismiss={() => setError(null)}>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {success && (
+            <Alert variant='success' onDismiss={() => setSuccess(false)}>
+              <AlertDescription>
+                A password reset link has been sent to your email.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Input
             type='email'
             placeholder='Email address'
@@ -52,20 +69,20 @@ export default function ForgotPasswordForm() {
             required
           />
 
-          <button
+          <Button
             className='w-full bg-black text-white p-2.5 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-slate-800 transition disabled:opacity-70 cursor-pointer'
             type='submit'
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></span>
+                <Spinner size='sm' className='text-white' />
                 Sending...
               </>
             ) : (
               'Send Reset Link'
             )}
-          </button>
+          </Button>
         </div>
 
         <div className='flex justify-center mt-6'>

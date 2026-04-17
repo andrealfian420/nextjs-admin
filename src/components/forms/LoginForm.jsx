@@ -2,6 +2,8 @@
 
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { Spinner } from '@/components/ui/Spinner';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Eye, EyeOff } from 'lucide-react';
@@ -19,6 +21,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [hydrated, setHydrated] = useState(false);
 
   const togglePassword = () => {
@@ -28,6 +31,7 @@ export default function LoginForm() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       const res = await authService.login({ email, password });
@@ -35,7 +39,9 @@ export default function LoginForm() {
       setAuth(res.token, res.user);
       router.push('/admin');
     } catch (error) {
-      console.error('Login failed:', error);
+      setError(
+        error?.message || 'Login failed. Please check your credentials.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -77,6 +83,12 @@ export default function LoginForm() {
             <p className='text-sm text-slate-500'>Sign in to your account</p>
           </div>
 
+          {error && (
+            <Alert variant='destructive' onDismiss={() => setError(null)}>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <Input
             type='email'
             placeholder='Email'
@@ -103,20 +115,20 @@ export default function LoginForm() {
             </Button>
           </div>
 
-          <button
+          <Button
             className='w-full bg-black text-white p-2.5 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-slate-800 transition disabled:opacity-70 cursor-pointer'
             type='submit'
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></span>
+                <Spinner size='sm' className='text-white' />
                 Signing In...
               </>
             ) : (
               'Sign In'
             )}
-          </button>
+          </Button>
         </div>
 
         <div className='flex justify-center mt-4'>
