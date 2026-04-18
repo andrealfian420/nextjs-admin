@@ -194,7 +194,6 @@ export default function UserForm({ isEdit = false }) {
         description: isEdit
           ? 'User updated successfully!'
           : 'User created successfully!',
-        position: 'bottom-right',
       });
 
       setTimeout(() => {

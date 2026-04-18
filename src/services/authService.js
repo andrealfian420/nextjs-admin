@@ -13,4 +13,6 @@ export const authService = {
   refreshToken: () => api.post('/auth/refresh', {}, { _retry: true }),
 
   profile: () => api.get('/profile'),
+
+  updateProfile: (data) => api.put('/profile', data),
 };

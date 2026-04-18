@@ -13,6 +13,7 @@ import { useTheme } from 'next-themes';
 import { useLogout } from '@/hooks/useLogout';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
+import Image from 'next/image';
 
 export default function Navbar() {
   const setIsOpen = useSidebarStore((state) => state.toggleSidebar);
@@ -28,6 +29,28 @@ export default function Navbar() {
   // resolvedTheme is undefined before client hydration — used as mount guard
   const toggleTheme = () => {
     return setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  };
+
+  const profilePicture = () => {
+    if (user?.avatarUrl) {
+      return (
+        <Image
+          unoptimized
+          width={12}
+          height={12}
+          src={user.avatarUrl}
+          alt='Profile'
+          className='h-8 w-8 rounded-full object-cover cursor-pointer'
+        />
+      );
+    }
+
+    return (
+      <User
+        size={16}
+        className='text-slate-600 dark:text-slate-300 cursor-pointer'
+      />
+    );
   };
 
   return (
@@ -64,15 +87,15 @@ export default function Navbar() {
           <div className='h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center'>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <User
-                  size={16}
-                  className='text-slate-600 dark:text-slate-300 cursor-pointer'
-                />
+                {profilePicture()}
               </DropdownMenuTrigger>
 
               <DropdownMenuContent className='mt-4 mr-4 p-0'>
-                <DropdownMenuItem className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'>
-                  <Link href='/profile'>Profile</Link>
+                <DropdownMenuItem
+                  asChild
+                  className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'
+                >
+                  <Link href='/admin/profile'>Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'
@@ -83,10 +106,6 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          <span className='text-sm font-medium text-slate-700 dark:text-slate-200'>
-            {user?.name || 'Loading...'}
-          </span>
         </div>
       </div>
     </header>

@@ -36,11 +36,7 @@ export const userService = {
   },
 
   async deleteUser(slug) {
-    const res = await api.delete(`/users/${slug}`, {
-      headers: {
-        accept: 'application/json',
-      },
-    });
+    const res = await api.delete(`/users/${slug}`);
     return res.data;
   },
 };
