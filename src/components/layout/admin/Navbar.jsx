@@ -12,9 +12,11 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useLogout } from '@/hooks/useLogout';
 import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function Navbar() {
   const setIsOpen = useSidebarStore((state) => state.toggleSidebar);
+  const user = useAuthStore((state) => state.user);
   const { resolvedTheme, setTheme } = useTheme();
   const { handleLogout } = useLogout();
   const [mounted, setMounted] = useState(false);
@@ -83,7 +85,7 @@ export default function Navbar() {
           </div>
 
           <span className='text-sm font-medium text-slate-700 dark:text-slate-200'>
-            Admin
+            {user?.name || 'Loading...'}
           </span>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
+import { fetchUser, forceLogout } from './auth';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -57,15 +58,17 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const response = await api.post(
-          '/auth/refresh',
+        const response = await axios.post(
+          `${apiUrl}/auth/refresh`,
           {},
-          { withCredentials: true, _retry: true },
+          { withCredentials: true },
         );
 
         const newToken = response.data.data.accessToken;
 
         useAuthStore.getState().setAccessToken(newToken);
+
+        await fetchUser(newToken);
 
         processQueue(null, newToken);
 
@@ -75,11 +78,7 @@ api.interceptors.response.use(
       } catch (error) {
         processQueue(error, null);
 
-        useAuthStore.getState().logout();
-
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
+        forceLogout();
 
         return Promise.reject(error);
       } finally {

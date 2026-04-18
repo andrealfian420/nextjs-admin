@@ -15,6 +15,7 @@ import { toast } from '@/components/ui/Toast';
 export default function LoginForm() {
   const router = useRouter();
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,6 +38,9 @@ export default function LoginForm() {
       const res = await authService.login({ email, password });
 
       setAccessToken(res.data.data.accessToken);
+
+      const user = await authService.profile();
+      setUser(user.data.data);
 
       const duration = 2000;
 

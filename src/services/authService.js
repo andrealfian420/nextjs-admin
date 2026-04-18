@@ -11,4 +11,6 @@ export const authService = {
   logout: () => api.post('/auth/logout'),
 
   refreshToken: () => api.post('/auth/refresh', {}, { _retry: true }),
+
+  profile: () => api.get('/profile'),
 };

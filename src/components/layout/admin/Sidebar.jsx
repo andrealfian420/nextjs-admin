@@ -13,7 +13,6 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,8 +20,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import { User } from 'lucide-react';
-import { authService } from '@/services/authService';
-import { toast } from 'sonner';
 import { useLogout } from '@/hooks/useLogout';
 
 const generateRandomKey = () => Math.random().toString(36).substring(2, 9);
@@ -71,6 +68,7 @@ export default function Sidebar() {
   const isOpen = useSidebarStore((state) => state.isOpen);
   const close = useSidebarStore((state) => state.close);
   const { handleLogout } = useLogout();
+  const user = useAuthStore((state) => state.user);
   const [openAccordions, setOpenAccordions] = useState(new Set());
 
   // watch route changes to auto-open accordions with active child
@@ -248,10 +246,10 @@ export default function Sidebar() {
 
             <div className='flex flex-col'>
               <span className='text-sm font-medium text-slate-700 dark:text-slate-200'>
-                Administrator
+                {user?.name || 'Loading...'}
               </span>
               <span className='text-xs font-medium text-slate-500 dark:text-slate-400'>
-                Super Admin
+                {user?.role?.title || 'Loading...'}
               </span>
             </div>
           </div>
