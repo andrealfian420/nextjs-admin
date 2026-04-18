@@ -1,5 +1,4 @@
 import {
-  ChevronDown,
   Database,
   History,
   LayoutDashboard,
@@ -38,10 +37,10 @@ export const ADMIN_MENU = [
   },
   { separator: true }, // separator item, if you need to divide sections
   {
-    name: 'Log Activity',
+    name: 'Activity Logs',
     icon: History,
-    key: 'log-activity',
-    href: '/admin/log-activity',
-    access: 'module.log-activity.index',
+    key: 'activity-logs',
+    href: '/admin/activity-logs',
+    access: 'module.activity-log.index',
   },
 ];

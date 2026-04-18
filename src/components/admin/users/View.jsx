@@ -62,17 +62,15 @@ function PageActions() {
 
 function RowActions({ row, onDeleteClick }) {
   return (
-    <>
+    <div className='flex gap-2'>
       <Can permission='module.master-data.user.edit'>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button className='cursor-pointer' size='icon-sm'>
-              <Link href={`/admin/users/${row.slug}`}>
-                <Pencil size={14} />
-              </Link>
-            </Button>
+            <Link href={`/admin/users/${row.slug}`}>
+              <Pencil size={14} />
+            </Link>
           </TooltipTrigger>
-          <TooltipContent className='[&_svg]:hidden! bg-slate-700 text-white'>
+          <TooltipContent className='[&_svg]:hidden! bg-slate-700 text-white hover:text-slate-200'>
             Edit
           </TooltipContent>
         </Tooltip>
@@ -81,21 +79,22 @@ function RowActions({ row, onDeleteClick }) {
       <Can permission='module.master-data.user.delete'>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              className='cursor-pointer'
+            <Link
+              href='#!'
+              className='cursor-pointer hover:text-red-600 dark:hover:text-red-400'
               size='icon-sm'
               variant='destructive'
               onClick={() => onDeleteClick(row)}
             >
               <Trash2 size={14} />
-            </Button>
+            </Link>
           </TooltipTrigger>
           <TooltipContent className='[&_svg]:hidden! bg-slate-700 text-white'>
             Delete
           </TooltipContent>
         </Tooltip>
       </Can>
-    </>
+    </div>
   );
 }
 
@@ -107,15 +106,15 @@ const tableColumns = [
   },
   {
     accessorKey: 'email',
-    header: 'Email'
+    header: 'Email',
   },
   {
     accessorKey: 'roleName',
-    header: 'Role'
+    header: 'Role',
   },
   {
     accessorKey: 'registeredAt',
-    header: 'Registered At'
+    header: 'Registered At',
   },
 ];
 

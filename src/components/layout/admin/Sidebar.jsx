@@ -31,13 +31,15 @@ export default function Sidebar() {
   const filteredMenu = filterMenuByAccess(ADMIN_MENU, user);
 
   const allFlatItems = filteredMenu.flatMap((item) =>
-    item.separator ? [] : item.children ? item.children : [item]
+    item.separator ? [] : item.children ? item.children : [item],
   );
 
   // Find the most specific matching href (longest prefix match) to avoid
   // short hrefs like /admin matching every admin sub-page.
   const activeHref = allFlatItems
-    .filter((item) => pathname === item.href || pathname.startsWith(item.href + '/'))
+    .filter(
+      (item) => pathname === item.href || pathname.startsWith(item.href + '/'),
+    )
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   // Watcher to automatically open the relevant accordion if the current pathname matches any of its children.

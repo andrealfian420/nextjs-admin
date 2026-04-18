@@ -10,7 +10,9 @@ export default function SidebarAccordion({
 }) {
   const checkMobileClose = useSidebarStore((state) => state.checkMobileClose);
   const Icon = item.icon;
-  const hasActiveChild = item.children.some((child) => child.href === activeHref);
+  const hasActiveChild = item.children.some(
+    (child) => child.href === activeHref,
+  );
 
   return (
     <div>
