@@ -24,16 +24,21 @@ import Can from '@/components/layout/admin/Can';
 
 function SortHeader({ column, label }) {
   const sorted = column.getIsSorted();
+  const isActive = !!sorted;
   return (
     <button
       onClick={() => column.toggleSorting()}
-      className='flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200 transition-colors'
+      className={`flex items-center gap-1 transition-colors ${
+        isActive
+          ? 'text-blue-600 dark:text-blue-400'
+          : 'hover:text-slate-700 dark:hover:text-slate-200'
+      }`}
     >
       {label}
       {sorted === 'asc' ? (
-        <ArrowUp size={12} className='text-slate-700 dark:text-slate-300' />
+        <ArrowUp size={12} className='text-blue-600 dark:text-blue-400' />
       ) : sorted === 'desc' ? (
-        <ArrowDown size={12} className='text-slate-700 dark:text-slate-300' />
+        <ArrowDown size={12} className='text-blue-600 dark:text-blue-400' />
       ) : (
         <ArrowUpDown size={12} className='text-slate-400 dark:text-slate-600' />
       )}
@@ -62,7 +67,7 @@ function RowActions({ row, onDeleteClick }) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button className='cursor-pointer' size='icon-sm'>
-              <Link href={`/admin/users/${row.uuid}`}>
+              <Link href={`/admin/users/${row.slug}`}>
                 <Pencil size={14} />
               </Link>
             </Button>
@@ -97,19 +102,20 @@ function RowActions({ row, onDeleteClick }) {
 const tableColumns = [
   {
     accessorKey: 'name',
-    header: ({ column }) => <SortHeader column={column} label='Name' />,
+    // header: 'Name'
+    header: ({ column }) => <SortHeader column={column} label='Name' />, // if you need to sort
   },
   {
     accessorKey: 'email',
-    header: ({ column }) => <SortHeader column={column} label='Email' />,
+    header: 'Email'
   },
   {
-    accessorKey: 'age',
-    header: ({ column }) => <SortHeader column={column} label='Age' />,
+    accessorKey: 'roleName',
+    header: 'Role'
   },
   {
-    accessorKey: 'uuid',
-    header: ({ column }) => <SortHeader column={column} label='UUID' />,
+    accessorKey: 'registeredAt',
+    header: 'Registered At'
   },
 ];
 
@@ -119,7 +125,7 @@ export default function ViewUsers() {
 
   const handleDelete = async (row) => {
     try {
-      await userService.deleteUser(row.id);
+      await userService.deleteUser(row.slug);
       setRefreshKey((key) => key + 1);
       toast.success('Delete Successful', {
         description: `${row.name} has been removed.`,

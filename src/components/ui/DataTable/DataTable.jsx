@@ -149,7 +149,7 @@ export default function DataTable({
 
             {!loading && data.length === 0 && (
               <tr>
-                <td colSpan={columns.length}>
+                <td colSpan={columns.length + 2}>
                   <div className='flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500'>
                     <svg
                       xmlns='http://www.w3.org/2000/svg'

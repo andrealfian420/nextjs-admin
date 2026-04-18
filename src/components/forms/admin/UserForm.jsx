@@ -12,32 +12,28 @@ import {
 } from '@/components/ui/Select';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/Toast';
+import { userService } from '@/services/userService';
+import { utilService } from '@/services/utilService';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, RefreshCwIcon, Upload, X } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
-const DUMMY_ROLES = [
-  { label: 'Super Admin', value: 1 },
-  { label: 'Backend User', value: 2 },
-];
-
 function userSchema(isEdit = false) {
   return z.object({
-    full_name: z.string().min(1, 'Full name is required'),
+    name: z.string().min(1, 'Full name is required'),
     email: z.string().email('Invalid email address'),
     password: isEdit
       ? z.string().optional().or(z.literal(''))
       : z.string().min(8, 'Password must be at least 8 characters'),
     avatar: z
       .any()
-      .optional()
       .refine(
         (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file?.type),
         'Only JPG, PNG, and WEBP formats are allowed',
@@ -45,19 +41,29 @@ function userSchema(isEdit = false) {
       .refine(
         (file) => !file || file?.size <= MAX_FILE_SIZE,
         'Avatar size must not exceed 2MB',
-      ),
-    role_id: z.string().min(1, 'Role is required'),
+      )
+      .refine((file) => {
+        if (isEdit) {
+          return true; // Skip required check in edit mode
+        }
+
+        return file instanceof File;
+      }, 'Avatar is required'),
+    roleId: z.string().min(1, 'Role is required'),
   });
 }
 
-export default function UserForm({ data = {} }) {
-  const isEdit = data?.id ? true : false;
+export default function UserForm({ isEdit = false }) {
+  const params = useParams();
+  const slug = isEdit ? params?.slug : null;
   const router = useRouter();
   const fileInputRef = useRef(null);
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(data.avatar ?? null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetching, setIsFetching] = useState(isEdit);
+  const [roles, setRoles] = useState([]);
 
   const schema = userSchema(isEdit);
 
@@ -66,17 +72,76 @@ export default function UserForm({ data = {} }) {
     handleSubmit,
     control,
     setValue,
+    reset,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      full_name: data.full_name ?? '',
-      email: data.email ?? '',
+      name: '',
+      email: '',
       password: '',
       avatar: undefined,
-      role_id: data.role_id ? String(data.role_id) : '',
+      roleId: '',
     },
   });
+
+  useEffect(() => {
+    if (!slug) return;
+
+    const fetchData = async () => {
+      try {
+        const res = await userService.getUser(slug);
+        const user = res.data;
+
+        reset({
+          name: user.name ?? '',
+          email: user.email ?? '',
+          password: '',
+          avatar: undefined,
+          roleId: user.roleId ? String(user.roleId) : '',
+        });
+
+        if (user.avatar) {
+          setAvatarPreview(user.avatarUrl ?? null);
+        }
+      } catch (err) {
+        toast.error('Error', {
+          description: 'Failed to load user data.',
+        });
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchData();
+  }, [slug, reset]);
+
+  useEffect(() => {
+    setIsFetching(true);
+
+    const fetchOptions = async () => {
+      try {
+        const res = await utilService.getRoleOptions();
+        setRoles(res.data);
+      } catch (err) {
+        toast.error('Error', {
+          description: 'Failed to load role options.',
+        });
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchOptions();
+  }, []);
+
+  if (isFetching) {
+    return (
+      <div className='flex justify-center items-center py-20'>
+        <Spinner />
+      </div>
+    );
+  }
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
@@ -106,10 +171,10 @@ export default function UserForm({ data = {} }) {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      // Dummy submit — replace with actual API call
       const payload = new FormData();
+      payload.append('name', data.name);
       payload.append('email', data.email);
-      payload.append('role_id', data.role_id);
+      payload.append('roleId', data.roleId);
 
       if (data.password) {
         payload.append('password', data.password);
@@ -119,7 +184,11 @@ export default function UserForm({ data = {} }) {
         payload.append('avatar', data.avatar);
       }
 
-      await new Promise((r) => setTimeout(r, 800)); // simulate API delay
+      if (isEdit) {
+        await userService.updateUser(slug, payload);
+      } else {
+        await userService.createUser(payload);
+      }
 
       toast.success('Success', {
         description: isEdit
@@ -128,28 +197,60 @@ export default function UserForm({ data = {} }) {
         position: 'bottom-right',
       });
 
-      router.push('/admin/users');
+      setTimeout(() => {
+        setIsSubmitting(false);
+        router.push('/admin/users');
+      }, 2000);
     } catch (err) {
-      console.error('[UserForm] Submit error:', err);
-      toast.error('Error', {
-        description: 'An error occurred. Please try again.',
-      });
-    } finally {
       setIsSubmitting(false);
+      let message = 'An error occurred. Please try again.';
+
+      if (err.response?.data?.message) {
+        message = err.response.data.message;
+      }
+
+      const toastMessage = `Failed to ${isEdit ? 'update' : 'create'} user.`;
+
+      toast.error(toastMessage, {
+        description: message,
+        position: 'top-right',
+      });
     }
   };
 
-  const resetForm = (e) => {
-    setValue('full_name', data.full_name ?? '', {
-      shouldValidate: false,
-    });
-    setValue('email', data.email ?? '', { shouldValidate: false });
-    setValue('password', '', { shouldValidate: false });
-    setValue('avatar', undefined, { shouldValidate: false });
-    setValue('role_id', data.role_id ? String(data.role_id) : '', {
-      shouldValidate: false,
-    });
-    setAvatarPreview(data.avatar ?? null);
+  const resetForm = async () => {
+    if (!isEdit) {
+      reset({
+        name: '',
+        email: '',
+        password: '',
+        avatar: undefined,
+        roleId: '',
+      });
+      setAvatarPreview(null);
+    } else {
+      // Re-trigger fetch to restore original values
+      setIsFetching(true);
+
+      try {
+        const res = await userService.getUser(slug);
+        const user = res.data;
+        reset({
+          name: user.name ?? '',
+          email: user.email ?? '',
+          password: '',
+          avatar: undefined,
+          roleId: user.roleId ? String(user.roleId) : '',
+        });
+        setAvatarPreview(user.avatarUrl ?? null);
+      } catch (error) {
+        toast.error('Error', {
+          description: 'Failed to reset form.',
+        });
+      } finally {
+        setIsFetching(false);
+      }
+    }
   };
 
   return (
@@ -157,19 +258,19 @@ export default function UserForm({ data = {} }) {
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           <div className='space-y-1.5'>
-            <Label htmlFor='full_name'>
+            <Label htmlFor='name'>
               Full Name
               <span className='text-red-500 ml-0.5'>*</span>
             </Label>
             <Input
-              id='full_name'
+              id='name'
               type='text'
-              placeholder='John Doe'
-              aria-invalid={!!errors.full_name}
-              {...register('full_name')}
+              placeholder='Enter Name'
+              aria-invalid={!!errors.name}
+              {...register('name')}
             />
             <p className='text-xs text-red-500 min-h-2'>
-              {errors.full_name?.message}
+              {errors.name?.message}
             </p>
           </div>
 
@@ -180,8 +281,9 @@ export default function UserForm({ data = {} }) {
             </Label>
             <Input
               id='email'
+              readOnly={isEdit}
               type='email'
-              placeholder='user@example.com'
+              placeholder='Enter Email'
               aria-invalid={!!errors.email}
               {...register('email')}
             />
@@ -224,24 +326,24 @@ export default function UserForm({ data = {} }) {
           </div>
 
           <div className='space-y-1.5'>
-            <Label htmlFor='role_id'>
+            <Label htmlFor='roleId'>
               Role
               <span className='text-red-500 ml-0.5'>*</span>
             </Label>
             <Controller
-              name='role_id'
+              name='roleId'
               control={control}
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger
-                    id='role_id'
-                    aria-invalid={!!errors.role_id}
+                    id='roleId'
+                    aria-invalid={!!errors.roleId}
                     className='w-full'
                   >
                     <SelectValue placeholder='Select a role' />
                   </SelectTrigger>
                   <SelectContent position='popper'>
-                    {DUMMY_ROLES.map((role) => (
+                    {roles.map((role) => (
                       <SelectItem
                         key={role.value}
                         value={String(role.value)}
@@ -255,12 +357,14 @@ export default function UserForm({ data = {} }) {
               )}
             />
             <p className='text-xs text-red-500 min-h-2'>
-              {errors.role_id?.message}
+              {errors.roleId?.message}
             </p>
           </div>
 
           <div className='space-y-1.5'>
-            <Label>Avatar</Label>
+            <Label>
+              Avatar {!isEdit && <span className='text-red-500 ml-0.5'>*</span>}
+            </Label>
             <p className='text-xs text-muted-foreground -mt-1'>
               JPG, PNG, WEBP — max 2 MB
             </p>
@@ -280,6 +384,7 @@ export default function UserForm({ data = {} }) {
                   alt='Avatar preview'
                   fill
                   className='object-cover'
+                  unoptimized
                 />
                 <button
                   type='button'

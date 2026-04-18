@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
   reactCompiler: true,
   images: {
-    domains: ['i.pravatar.cc'],
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost' },
+      // { protocol: 'https', hostname: 'i.pravatar.cc' }, // Example for external image source
+    ],
   },
 };
-
 export default nextConfig;
