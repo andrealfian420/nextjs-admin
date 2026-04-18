@@ -1,110 +1,36 @@
 'use client';
 
-import Link from 'next/link';
-import {
-  ChevronDown,
-  Database,
-  History,
-  LayoutDashboard,
-  Shield,
-  Users,
-} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+
+// Store & Hooks
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/DropdownMenu';
-import { User } from 'lucide-react';
 import { useLogout } from '@/hooks/useLogout';
-import { hasAccess } from '@/lib/permission';
 
-const generateRandomKey = () => Math.random().toString(36).substring(2, 9);
+// Utils
+import { filterMenuByAccess } from '@/lib/permission';
+import { ADMIN_MENU } from '@/config/navigation';
+import { generateRandomKey } from '@/lib/utils';
 
-const menu = [
-  {
-    name: 'Dashboard',
-    icon: LayoutDashboard,
-    key: 'dash',
-    href: '/admin',
-    access: 'module.dashboard.index',
-  },
-  {
-    name: 'Master Data',
-    icon: Database,
-    key: 'master',
-    children: [
-      {
-        name: 'Users',
-        icon: Users,
-        key: 'users',
-        href: '/admin/users',
-        access: 'module.master-data.user.index',
-      },
-      {
-        name: 'Roles',
-        icon: Shield,
-        key: 'roles',
-        href: '/admin/roles',
-        access: 'module.master-data.role.index',
-      },
-    ],
-  },
-  { separator: true }, // separator item, if you need to divide sections
-  {
-    name: 'Log Activity',
-    icon: History,
-    key: 'log-activity',
-    href: '/admin/log-activity',
-    access: 'module.log-activity.index',
-  },
-];
-
-function filterMenuByAccess(menu, user) {
-  return menu
-    .map((item) => {
-      if (item.separator) {
-        return item; // keep separators
-      }
-
-      // if menu has children, filter them based on access
-      if (item.children) {
-        const filteredChildren = item.children.filter((child) => {
-          return hasAccess(user, child.access);
-        });
-
-        if (filteredChildren.length === 0) {
-          return null; // if no children are accessible, hide the parent menu as well
-        }
-
-        return { ...item, children: filteredChildren };
-      }
-
-      // for regular menu items, check access
-      if (!item.access || hasAccess(user, item.access)) {
-        return item; // show menu if user has access
-      }
-
-      return null; // hide menu if user doesn't have access
-    })
-    .filter(Boolean); // remove null items
-}
+// Sub-components
+import SidebarItem from './sidebar/SidebarItem';
+import SidebarAccordion from './sidebar/SidebarAccordion';
+import SidebarProfile from './sidebar/SidebarProfile';
 
 export default function Sidebar() {
   const pathname = usePathname();
+
   const isOpen = useSidebarStore((state) => state.isOpen);
   const close = useSidebarStore((state) => state.close);
+
   const { handleLogout } = useLogout();
   const user = useAuthStore((state) => state.user);
+
   const [openAccordions, setOpenAccordions] = useState(new Set());
+  const filteredMenu = filterMenuByAccess(ADMIN_MENU, user);
 
-  const filteredMenu = filterMenuByAccess(menu, user);
-
-  // watch route changes to auto-open accordions with active child
+  // Watcher to automatically open the relevant accordion if the current pathname matches any of its children.
   useEffect(() => {
     filteredMenu.forEach((item) => {
       if (item.children?.some((child) => child.href === pathname)) {
@@ -118,19 +44,17 @@ export default function Sidebar() {
     });
   }, [pathname, filteredMenu]);
 
-  // toggle accordion menu open/close
   const toggleAccordion = (key) => {
     setOpenAccordions((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
   };
 
   return (
     <>
-      {/* Overlay — always rendered, fade in/out via opacity */}
+      {/* Overlay */}
       <div
         className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -138,22 +62,12 @@ export default function Sidebar() {
         onClick={close}
       />
 
-      {/* Sidebar — fixed on mobile (overlay), static in flex flow on desktop */}
       <aside
-        className={`
-          fixed lg:static top-0 left-0
-          h-full lg:h-auto
-          z-50 lg:z-auto
-          flex flex-col flex-shrink-0
-          bg-white dark:bg-slate-800 shadow-[2px_0_12px_0_rgba(0,0,0,0.06)]
-          overflow-hidden
-          transition-all duration-300 ease-in-out
-          ${
-            isOpen
-              ? 'w-64 translate-x-0'
-              : 'w-64 -translate-x-full lg:w-0 lg:translate-x-0'
-          }
-        `}
+        className={`fixed lg:static top-0 left-0 h-full lg:h-auto z-50 lg:z-auto flex flex-col flex-shrink-0 bg-white dark:bg-slate-800 shadow-[2px_0_12px_0_rgba(0,0,0,0.06)] overflow-hidden transition-all duration-300 ease-in-out ${
+          isOpen
+            ? 'w-64 translate-x-0'
+            : 'w-64 -translate-x-full lg:w-0 lg:translate-x-0'
+        }`}
       >
         <div className='h-14 flex items-center px-6 flex-shrink-0'>
           <h1 className='font-semibold text-lg tracking-tight whitespace-nowrap text-slate-800 dark:text-slate-100'>
@@ -172,121 +86,30 @@ export default function Sidebar() {
               );
             }
 
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-
             if (item.children) {
-              const isAccordionOpen = openAccordions.has(item.key);
-              const hasActiveChild = item.children.some(
-                (child) => child.href === pathname,
-              );
-
               return (
-                <div key={item.key}>
-                  <button
-                    onClick={() => toggleAccordion(item.key)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
-                      hasActiveChild
-                        ? 'text-slate-900 dark:text-slate-100'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
-                    }`}
-                  >
-                    <Icon size={18} />
-                    <span className='flex-1 text-left'>{item.name}</span>
-                    <ChevronDown
-                      size={16}
-                      className={`transition-transform duration-200 ${
-                        isAccordionOpen ? 'rotate-180' : ''
-                      }`}
-                    />
-                  </button>
-
-                  <div
-                    className={`grid transition-all duration-200 ${
-                      isAccordionOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                    }`}
-                  >
-                    <div className='overflow-hidden'>
-                      <div className='ml-6 flex flex-col gap-1 pt-1'>
-                        {item.children.map((child) => {
-                          const ChildIcon = child.icon;
-                          const isChildActive = pathname.includes(child.href);
-
-                          return (
-                            <Link
-                              key={child.key}
-                              href={child.href}
-                              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors whitespace-nowrap ${
-                                isChildActive
-                                  ? 'bg-slate-100 dark:bg-slate-700 font-medium text-slate-900 dark:text-slate-100'
-                                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
-                              }`}
-                            >
-                              <ChildIcon size={16} />
-                              {child.name}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <SidebarAccordion
+                  key={item.key}
+                  item={item}
+                  pathname={pathname}
+                  isAccordionOpen={openAccordions.has(item.key)}
+                  toggleAccordion={toggleAccordion}
+                />
               );
             }
 
             return (
-              <Link
+              <SidebarItem
                 key={item.key}
-                href={item.href}
-                onClick={() => setOpenAccordions(new Set())}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
-                  isActive
-                    ? 'bg-slate-100 dark:bg-slate-700 font-medium text-slate-900 dark:text-slate-100'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
-                }`}
-              >
-                <Icon size={18} />
-                {item.name}
-              </Link>
+                item={item}
+                isActive={pathname === item.href}
+                setOpenAccordions={setOpenAccordions}
+              />
             );
           })}
         </nav>
 
-        <div className='h-14 flex items-center px-6 flex-shrink-0 border-t border-slate-200 dark:border-slate-700'>
-          <div className='flex items-center gap-3'>
-            <div className='h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center'>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <User
-                    size={16}
-                    className='text-slate-600 dark:text-slate-300 cursor-pointer'
-                  />
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent className='mb-4 p-0 min-w-[180px]'>
-                  <DropdownMenuItem className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'>
-                    <Link href='/profile'>Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            <div className='flex flex-col'>
-              <span className='text-sm font-medium text-slate-700 dark:text-slate-200'>
-                {user?.name || 'Loading...'}
-              </span>
-              <span className='text-xs font-medium text-slate-500 dark:text-slate-400'>
-                {user?.role?.title || 'Loading...'}
-              </span>
-            </div>
-          </div>
-        </div>
+        <SidebarProfile user={user} handleLogout={handleLogout} />
       </aside>
     </>
   );
