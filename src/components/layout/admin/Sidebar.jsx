@@ -30,10 +30,20 @@ export default function Sidebar() {
   const [openAccordions, setOpenAccordions] = useState(new Set());
   const filteredMenu = filterMenuByAccess(ADMIN_MENU, user);
 
+  const allFlatItems = filteredMenu.flatMap((item) =>
+    item.separator ? [] : item.children ? item.children : [item]
+  );
+
+  // Find the most specific matching href (longest prefix match) to avoid
+  // short hrefs like /admin matching every admin sub-page.
+  const activeHref = allFlatItems
+    .filter((item) => pathname === item.href || pathname.startsWith(item.href + '/'))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
   // Watcher to automatically open the relevant accordion if the current pathname matches any of its children.
   useEffect(() => {
     filteredMenu.forEach((item) => {
-      if (item.children?.some((child) => child.href === pathname)) {
+      if (item.children?.some((child) => child.href === activeHref)) {
         setOpenAccordions((prev) => {
           if (prev.has(item.key)) return prev;
           const next = new Set(prev);
@@ -91,7 +101,7 @@ export default function Sidebar() {
                 <SidebarAccordion
                   key={item.key}
                   item={item}
-                  pathname={pathname}
+                  activeHref={activeHref}
                   isAccordionOpen={openAccordions.has(item.key)}
                   toggleAccordion={toggleAccordion}
                 />
@@ -102,7 +112,7 @@ export default function Sidebar() {
               <SidebarItem
                 key={item.key}
                 item={item}
-                isActive={pathname === item.href}
+                isActive={item.href === activeHref}
                 setOpenAccordions={setOpenAccordions}
               />
             );

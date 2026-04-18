@@ -4,13 +4,13 @@ import { useSidebarStore } from '@/store/useSidebarStore';
 
 export default function SidebarAccordion({
   item,
-  pathname,
+  activeHref,
   isAccordionOpen,
   toggleAccordion,
 }) {
   const checkMobileClose = useSidebarStore((state) => state.checkMobileClose);
   const Icon = item.icon;
-  const hasActiveChild = item.children.some((child) => child.href === pathname);
+  const hasActiveChild = item.children.some((child) => child.href === activeHref);
 
   return (
     <div>
@@ -37,7 +37,7 @@ export default function SidebarAccordion({
           <div className='ml-6 flex flex-col gap-1 pt-1'>
             {item.children.map((child) => {
               const ChildIcon = child.icon;
-              const isChildActive = pathname.includes(child.href);
+              const isChildActive = child.href === activeHref;
 
               return (
                 <Link
