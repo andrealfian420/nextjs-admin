@@ -1,5 +1,6 @@
 import UserForm from '@/components/forms/admin/UserForm';
 import PageHeader from '@/components/ui/PageHeader';
+import PermissionGuard from '@/components/layout/admin/PermissionGuard';
 
 // Dummy data for demonstration. Replace with actual API data fetching.
 const dummy = {
@@ -10,9 +11,14 @@ const dummy = {
   avatar: 'https://i.pravatar.cc/150?img=17',
 };
 
+export const metadata = {
+  title: `Edit User ${dummy.full_name} - Admin Dashboard`,
+  description: `Edit details of user ${dummy.full_name} in the admin dashboard`,
+};
+
 export default function AdminUsersEditPage() {
   return (
-    <main>
+    <PermissionGuard permission='module.master-data.user.edit'>
       <PageHeader
         title={`Edit User ${dummy.full_name}`}
         breadcrumbs={[
@@ -21,8 +27,8 @@ export default function AdminUsersEditPage() {
           { label: `Edit User ${dummy.full_name}` },
         ]}
       />
-      {/* Pass data from your API fetch here */}
+
       <UserForm data={dummy} />
-    </main>
+    </PermissionGuard>
   );
 }

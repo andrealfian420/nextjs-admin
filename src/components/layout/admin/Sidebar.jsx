@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/DropdownMenu';
 import { User } from 'lucide-react';
 import { useLogout } from '@/hooks/useLogout';
+import { hasAccess } from '@/lib/permission';
 
 const generateRandomKey = () => Math.random().toString(36).substring(2, 9);
 
@@ -30,7 +31,7 @@ const menu = [
     icon: LayoutDashboard,
     key: 'dash',
     href: '/admin',
-    access: 'modules.dashboard.index',
+    access: 'module.dashboard.index',
   },
   {
     name: 'Master Data',
@@ -42,14 +43,14 @@ const menu = [
         icon: Users,
         key: 'users',
         href: '/admin/users',
-        access: 'modules.master-data.users.index',
+        access: 'module.master-data.user.index',
       },
       {
         name: 'Roles',
         icon: Shield,
         key: 'roles',
         href: '/admin/roles',
-        access: 'modules.master-data.role.index',
+        access: 'module.master-data.role.index',
       },
     ],
   },
@@ -59,9 +60,39 @@ const menu = [
     icon: History,
     key: 'log-activity',
     href: '/admin/log-activity',
-    access: 'modules.log-activity.index',
+    access: 'module.log-activity.index',
   },
 ];
+
+function filterMenuByAccess(menu, user) {
+  return menu
+    .map((item) => {
+      if (item.separator) {
+        return item; // keep separators
+      }
+
+      // if menu has children, filter them based on access
+      if (item.children) {
+        const filteredChildren = item.children.filter((child) => {
+          return hasAccess(user, child.access);
+        });
+
+        if (filteredChildren.length === 0) {
+          return null; // if no children are accessible, hide the parent menu as well
+        }
+
+        return { ...item, children: filteredChildren };
+      }
+
+      // for regular menu items, check access
+      if (!item.access || hasAccess(user, item.access)) {
+        return item; // show menu if user has access
+      }
+
+      return null; // hide menu if user doesn't have access
+    })
+    .filter(Boolean); // remove null items
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -71,9 +102,11 @@ export default function Sidebar() {
   const user = useAuthStore((state) => state.user);
   const [openAccordions, setOpenAccordions] = useState(new Set());
 
+  const filteredMenu = filterMenuByAccess(menu, user);
+
   // watch route changes to auto-open accordions with active child
   useEffect(() => {
-    menu.forEach((item) => {
+    filteredMenu.forEach((item) => {
       if (item.children?.some((child) => child.href === pathname)) {
         setOpenAccordions((prev) => {
           if (prev.has(item.key)) return prev;
@@ -83,7 +116,7 @@ export default function Sidebar() {
         });
       }
     });
-  }, [pathname]);
+  }, [pathname, filteredMenu]);
 
   // toggle accordion menu open/close
   const toggleAccordion = (key) => {
@@ -129,7 +162,7 @@ export default function Sidebar() {
         </div>
 
         <nav className='flex flex-col gap-1 p-3 flex-1 overflow-y-auto'>
-          {menu.map((item) => {
+          {filteredMenu.map((item) => {
             if (item.separator) {
               return (
                 <div

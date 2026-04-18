@@ -20,6 +20,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
+import Can from '@/components/layout/admin/Can';
 
 function SortHeader({ column, label }) {
   const sorted = column.getIsSorted();
@@ -42,47 +43,53 @@ function SortHeader({ column, label }) {
 
 function PageActions() {
   return (
-    <Link
-      href='/admin/users/create'
-      className='inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-slate-700 text-white text-sm font-medium shadow-sm hover:bg-slate-800 transition-colors'
-    >
-      <Plus size={14} />
-      Add User
-    </Link>
+    <Can permission='module.master-data.user.create'>
+      <Link
+        href='/admin/users/create'
+        className='inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-slate-700 text-white text-sm font-medium shadow-sm hover:bg-slate-800 transition-colors'
+      >
+        <Plus size={14} />
+        Add User
+      </Link>
+    </Can>
   );
 }
 
 function RowActions({ row, onDeleteClick }) {
   return (
     <>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button className='cursor-pointer' size='icon-sm'>
-            <Link href={`/admin/users/${row.uuid}`}>
-              <Pencil size={14} />
-            </Link>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className='[&_svg]:hidden! bg-slate-700 text-white'>
-          Edit
-        </TooltipContent>
-      </Tooltip>
+      <Can permission='module.master-data.user.edit'>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button className='cursor-pointer' size='icon-sm'>
+              <Link href={`/admin/users/${row.uuid}`}>
+                <Pencil size={14} />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className='[&_svg]:hidden! bg-slate-700 text-white'>
+            Edit
+          </TooltipContent>
+        </Tooltip>
+      </Can>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            className='cursor-pointer'
-            size='icon-sm'
-            variant='destructive'
-            onClick={() => onDeleteClick(row)}
-          >
-            <Trash2 size={14} />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className='[&_svg]:hidden! bg-slate-700 text-white'>
-          Delete
-        </TooltipContent>
-      </Tooltip>
+      <Can permission='module.master-data.user.delete'>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className='cursor-pointer'
+              size='icon-sm'
+              variant='destructive'
+              onClick={() => onDeleteClick(row)}
+            >
+              <Trash2 size={14} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className='[&_svg]:hidden! bg-slate-700 text-white'>
+            Delete
+          </TooltipContent>
+        </Tooltip>
+      </Can>
     </>
   );
 }
