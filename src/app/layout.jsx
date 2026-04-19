@@ -1,6 +1,8 @@
 import { ThemeProvider } from 'next-themes';
 import './globals.css';
 import AuthProvider from '@/components/providers/AuthProvider';
+import PendingToastHandler from '@/components/providers/PendingToastHandler';
+import { Toaster } from '@/components/ui/Sonner';
 
 export const metadata = {
   title: 'Next.js Admin',
@@ -19,6 +21,8 @@ export default function RootLayout({ children }) {
             disableTransitionOnChange
           >
             {children}
+            <Toaster />
+            <PendingToastHandler />
           </ThemeProvider>
         </AuthProvider>
       </body>

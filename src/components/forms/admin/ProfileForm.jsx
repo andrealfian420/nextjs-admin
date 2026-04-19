@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/Toast';
+import { useLogout } from '@/hooks/useLogout';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store/useAuthStore';
+import { usePendingToastStore } from '@/store/usePendingToastStore';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, RefreshCwIcon, Upload, X } from 'lucide-react';
 import Image from 'next/image';
@@ -53,6 +55,10 @@ export default function ProfileForm() {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const { handleLogout } = useLogout();
+  const setPendingToast = usePendingToastStore(
+    (state) => state.setPendingToast,
+  );
 
   const {
     register,
@@ -141,19 +147,36 @@ export default function ProfileForm() {
 
       const res = await authService.updateProfile(payload);
 
+      if (data.password) {
+        // Password was changed — API has invalidated all tokens.
+        // Set a pending toast before logout so it shows on the login page.
+        setPendingToast({
+          type: 'info',
+          title: 'Password Changed',
+          description: 'Your password has been updated. Please sign in again.',
+        });
+
+        setTimeout(async () => {
+          await handleLogout();
+        }, 2000);
+        return;
+      }
+
       // reload user profile after successful update
       useAuthStore.setState({ user: res.data.data });
 
       toast.success('Success', {
         description: 'Profile updated successfully!',
       });
+
+      setIsSubmitting(false);
     } catch (err) {
       const message =
         err.response?.data?.message || 'An error occurred. Please try again.';
       toast.error('Failed to update profile', {
         description: message,
       });
-    } finally {
+
       setIsSubmitting(false);
     }
   };
