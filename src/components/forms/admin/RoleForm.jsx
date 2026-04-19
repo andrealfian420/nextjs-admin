@@ -39,7 +39,8 @@ export default function RoleForm({ isEdit = false }) {
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFetching, setIsFetching] = useState(isEdit);
+  const [isFetchingRole, setIsFetchingRole] = useState(isEdit);
+  const [isFetching, setIsFetching] = useState(false);
   const [accessList, setAccessList] = useState([]);
   const redirectTimerRef = useRef(null);
 
@@ -89,7 +90,11 @@ export default function RoleForm({ isEdit = false }) {
   }, [allAccessValues, watchedAccesses]);
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug) {
+      return;
+    }
+
+    setIsFetchingRole(true);
 
     const fetchData = async () => {
       try {
@@ -107,7 +112,7 @@ export default function RoleForm({ isEdit = false }) {
           description: 'Failed to load role data.',
         });
       } finally {
-        setIsFetching(false);
+        setIsFetchingRole(false);
       }
     };
 
@@ -133,7 +138,7 @@ export default function RoleForm({ isEdit = false }) {
     fetchAccessList();
   }, []);
 
-  if (isFetching) {
+  if (isFetching || isFetchingRole) {
     return (
       <div className='flex justify-center items-center py-20'>
         <Spinner />
@@ -194,7 +199,7 @@ export default function RoleForm({ isEdit = false }) {
         accesses: [],
       });
     } else {
-      setIsFetching(true);
+      setIsFetchingRole(true);
 
       try {
         const res = await roleService.getRole(slug);
@@ -210,7 +215,7 @@ export default function RoleForm({ isEdit = false }) {
           description: 'Failed to reset form.',
         });
       } finally {
-        setIsFetching(false);
+        setIsFetchingRole(false);
       }
     }
   };

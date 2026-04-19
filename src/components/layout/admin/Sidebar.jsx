@@ -11,7 +11,6 @@ import { useLogout } from '@/hooks/useLogout';
 // Utils
 import { filterMenuByAccess } from '@/lib/permission';
 import { ADMIN_MENU } from '@/config/navigation';
-import { generateRandomKey } from '@/lib/utils';
 
 // Sub-components
 import SidebarItem from './sidebar/SidebarItem';
@@ -88,11 +87,11 @@ export default function Sidebar() {
         </div>
 
         <nav className='flex flex-col gap-1 p-3 flex-1 overflow-y-auto'>
-          {filteredMenu.map((item) => {
+          {filteredMenu.map((item, index) => {
             if (item.separator) {
               return (
                 <div
-                  key={generateRandomKey()}
+                  key={`separator-${index}`}
                   className='border-t border-slate-200 dark:border-slate-700 my-2'
                 />
               );

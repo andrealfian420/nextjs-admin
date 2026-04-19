@@ -6,6 +6,7 @@ import { logService } from '@/services/logService';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/components/ui/Toast';
 
 const ACTION_VARIANTS = {
   CREATE:
@@ -136,6 +137,12 @@ export default function DetailActivityLog() {
       .getActivityLog(id)
       .then((res) => {
         setLog(res.data);
+      })
+      .catch(() => {
+        toast.error('Failed to load log', {
+          description: 'The log entry could not be loaded.',
+        });
+        router.push('/admin/activity-logs');
       })
       .finally(() => setLoading(false));
   }, [id]);

@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { hasAccess } from '@/lib/permission';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { Spinner } from '@/components/ui/Spinner';
 
 export default function PermissionGuard({
   permission,
@@ -14,7 +15,9 @@ export default function PermissionGuard({
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
 
     // Check if user has access to the required permission
     if (!hasAccess(user, permission)) {
@@ -23,7 +26,11 @@ export default function PermissionGuard({
   }, [user, permission]);
 
   if (!user) {
-    return null;
+    return (
+      <div className='flex justify-center items-center py-20'>
+        <Spinner />
+      </div>
+    );
   }
 
   if (!hasAccess(user, permission)) {
