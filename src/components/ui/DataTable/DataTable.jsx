@@ -116,89 +116,91 @@ export default function DataTable({
       </div>
 
       <div className='rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden bg-white dark:bg-slate-800'>
-        <table className='w-full text-sm'>
-          <thead>
-            <tr className='border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40'>
-              {table.getHeaderGroups().map((headerGroup) =>
-                headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className='text-left px-5 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap'
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </th>
-                )),
-              )}
-            </tr>
-          </thead>
-
-          <tbody className='divide-y divide-slate-100 dark:divide-slate-700'>
-            {loading &&
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className='animate-pulse'>
-                  {tableColumns.map((_, j) => (
-                    <td key={j} className='px-5 py-4'>
-                      <div className='h-4 bg-slate-100 dark:bg-slate-700 rounded-md w-3/4' />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-
-            {!loading && data.length === 0 && (
-              <tr>
-                <td colSpan={columns.length + 2}>
-                  <div className='flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500'>
-                    <svg
-                      xmlns='http://www.w3.org/2000/svg'
-                      className='size-10 mb-3 text-slate-300 dark:text-slate-600'
-                      fill='none'
-                      viewBox='0 0 24 24'
-                      stroke='currentColor'
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        d='M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4'
-                      />
-                    </svg>
-                    <p className='text-sm font-medium'>No data found</p>
-                    <p className='text-xs mt-1 text-slate-300 dark:text-slate-500'>
-                      Try adjusting your search query
-                    </p>
-                  </div>
-                </td>
-              </tr>
-            )}
-
-            {!loading &&
-              table.getRowModel().rows.map((row, rowIndex) => (
-                <tr
-                  key={row.id}
-                  className={`transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40 ${
-                    rowIndex % 2 === 0
-                      ? 'bg-white dark:bg-slate-800'
-                      : 'bg-slate-50/50 dark:bg-slate-700/20'
-                  }`}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className='px-5 py-3.5 text-slate-700 dark:text-slate-300'
+        <div className='overflow-x-auto'>
+          <table className='w-full text-sm'>
+            <thead>
+              <tr className='border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40'>
+                {table.getHeaderGroups().map((headerGroup) =>
+                  headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className='text-left px-5 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap'
                     >
                       {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
+                        header.column.columnDef.header,
+                        header.getContext(),
                       )}
-                    </td>
-                  ))}
+                    </th>
+                  )),
+                )}
+              </tr>
+            </thead>
+
+            <tbody className='divide-y divide-slate-100 dark:divide-slate-700'>
+              {loading &&
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className='animate-pulse'>
+                    {tableColumns.map((_, j) => (
+                      <td key={j} className='px-5 py-4'>
+                        <div className='h-4 bg-slate-100 dark:bg-slate-700 rounded-md w-3/4' />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+
+              {!loading && data.length === 0 && (
+                <tr>
+                  <td colSpan={columns.length + 2}>
+                    <div className='flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500'>
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='size-10 mb-3 text-slate-300 dark:text-slate-600'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
+                        strokeWidth={1.5}
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          d='M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4'
+                        />
+                      </svg>
+                      <p className='text-sm font-medium'>No data found</p>
+                      <p className='text-xs mt-1 text-slate-300 dark:text-slate-500'>
+                        Try adjusting your search query
+                      </p>
+                    </div>
+                  </td>
                 </tr>
-              ))}
-          </tbody>
-        </table>
+              )}
+
+              {!loading &&
+                table.getRowModel().rows.map((row, rowIndex) => (
+                  <tr
+                    key={row.id}
+                    className={`transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40 ${
+                      rowIndex % 2 === 0
+                        ? 'bg-white dark:bg-slate-800'
+                        : 'bg-slate-50/50 dark:bg-slate-700/20'
+                    }`}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        key={cell.id}
+                        className='px-5 py-3.5 text-slate-700 dark:text-slate-300'
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <DataTablePagination

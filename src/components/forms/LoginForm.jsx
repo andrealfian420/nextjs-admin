@@ -2,40 +2,50 @@
 
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store/useAuthStore';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/Toast';
+import { z } from 'zod';
+
+const loginSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
 
 export default function LoginForm() {
   const router = useRouter();
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
   const setUser = useAuthStore((state) => state.setUser);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [errors, setErrors] = useState({}); // field error
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
 
   const togglePassword = () => {
     setIsPasswordVisible((prev) => !prev);
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-
+  const onSubmit = async (data) => {
     setIsLoading(true);
-    setErrors({});
 
     try {
-      const res = await authService.login({ email, password });
+      const res = await authService.login(data);
 
       setAccessToken(res.data.data.accessToken);
 
@@ -58,11 +68,9 @@ export default function LoginForm() {
       const apiMessage = err.response?.data?.message;
 
       if (apiErrors) {
-        const formatted = {};
         apiErrors.forEach((e) => {
-          formatted[e.field] = e.message;
+          setError(e.field, { message: e.message });
         });
-        setErrors(formatted);
       } else {
         toast.error(
           apiMessage || 'Login failed. Please check your credentials.',
@@ -80,7 +88,8 @@ export default function LoginForm() {
   return (
     <div className='flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800'>
       <form
-        onSubmit={handleLogin}
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
         className='bg-white p-10 rounded-2xl shadow-xl w-96 dark:bg-slate-800 dark:shadow-slate-900/50'
       >
         <div className='space-y-6'>
@@ -98,15 +107,11 @@ export default function LoginForm() {
               type='email'
               placeholder='Email'
               className='focus:ring-2 focus:ring-black'
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setErrors((prev) => ({ ...prev, email: null }));
-              }}
-              required
+              aria-invalid={!!errors.email}
+              {...register('email')}
             />
             {errors.email && (
-              <p className='text-xs text-red-500'>{errors.email}</p>
+              <p className='text-xs text-red-500'>{errors.email.message}</p>
             )}
           </div>
 
@@ -116,25 +121,23 @@ export default function LoginForm() {
                 type={isPasswordVisible ? 'text' : 'password'}
                 placeholder='Password'
                 className='focus:ring-2 focus:ring-black'
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setErrors((prev) => ({ ...prev, password: null }));
-                }}
-                required
+                aria-invalid={!!errors.password}
+                {...register('password')}
               />
 
               <Button
                 onClick={togglePassword}
                 type='button'
-                className='absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded cursor-pointer'
+                variant='ghost'
+                size='icon'
+                className='absolute right-2 top-1/2 -translate-y-1/2 size-7 cursor-pointer text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-transparent'
               >
                 {isPasswordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
               </Button>
             </div>
 
             {errors.password && (
-              <p className='text-xs text-red-500'>{errors.password}</p>
+              <p className='text-xs text-red-500'>{errors.password.message}</p>
             )}
           </div>
 

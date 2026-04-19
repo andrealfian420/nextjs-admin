@@ -65,8 +65,8 @@ export default function DeleteDialog({
 
         <DialogPrimitive.Content
           className={cn(
-            'fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2',
-            'rounded-2xl bg-white p-6 text-sm shadow-xl outline-none ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10',
+            'fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2',
+            'rounded-2xl bg-white p-5 sm:p-6 text-sm shadow-xl outline-none ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10',
             'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
             'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           )}
@@ -100,14 +100,14 @@ export default function DeleteDialog({
           <DialogFooter className='gap-2 sm:gap-2'>
             <Button
               variant='outline'
-              className='flex-1 cursor-pointer'
+              className='p-2.5 flex-1 cursor-pointer'
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
               Cancel
             </Button>
             <Button
-              className='flex-1 cursor-pointer bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500/40 dark:bg-red-600 dark:hover:bg-red-700'
+              className='p-2.5 flex-1 cursor-pointer bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500/40 dark:bg-red-600 dark:hover:bg-red-700'
               onClick={handleConfirm}
               disabled={loading}
             >

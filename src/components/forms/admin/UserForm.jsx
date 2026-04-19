@@ -313,7 +313,7 @@ export default function UserForm({ isEdit = false }) {
                 type='button'
                 size='icon-sm'
                 variant='ghost'
-                className='absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground'
+                className='absolute right-1 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-transparent'
                 onClick={() => setIsPasswordVisible((v) => !v)}
               >
                 {isPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}

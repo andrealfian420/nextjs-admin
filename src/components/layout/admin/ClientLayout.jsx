@@ -24,7 +24,7 @@ export default function ClientLayout({ children }) {
       <div className='flex h-screen font-sans bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-hidden'>
         <Sidebar />
 
-        <div className='flex-1 flex flex-col transition-all duration-300'>
+        <div className='flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300'>
           <Navbar />
 
           <main className='flex-1 overflow-y-auto p-6 sm:p-5 space-y-8'>
