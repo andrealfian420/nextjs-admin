@@ -4,15 +4,34 @@ import api from '@/lib/axios';
 export const authService = {
   // _retry: true prevents the 401 interceptor from attempting a token refresh
   // on auth endpoints — a 401 here means invalid credentials, not an expired token.
-  login: (data) => api.post('/auth/login', data, { _retry: true }),
 
-  register: (data) => api.post('/auth/register', data, { _retry: true }),
+  async login(credentials) {
+    const res = await api.post('/auth/login', credentials, { _retry: true });
+    return res.data;
+  },
 
-  logout: () => api.post('/auth/logout'),
+  async register(userData) {
+    const res = await api.post('/auth/register', userData, { _retry: true });
+    return res.data;
+  },
 
-  refreshToken: () => api.post('/auth/refresh', {}, { _retry: true }),
+  async logout() {
+    const res = await api.post('/auth/logout');
+    return res.data;
+  },
 
-  profile: () => api.get('/profile'),
+  async refreshToken() {
+    const res = await api.post('/auth/refresh', {}, { _retry: true });
+    return res.data;
+  },
 
-  updateProfile: (data) => api.put('/profile', data),
+  async profile() {
+    const res = await api.get('/profile');
+    return res.data;
+  },
+
+  async updateProfile(profileData) {
+    const res = await api.put('/profile', profileData);
+    return res.data;
+  },
 };
