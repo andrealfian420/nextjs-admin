@@ -29,7 +29,7 @@ const profileSchema = z.object({
       }
 
       // min 8, has 1 uppercase, 1 number and special character
-      return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
+      return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&]{8,}$/.test(
         val,
       );
     }, 'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character')
@@ -48,17 +48,29 @@ const profileSchema = z.object({
 });
 
 export default function ProfileForm() {
-  const user = useAuthStore((state) => state.user);
+  // Only used to sync global session state after update (for navbar, permissions, etc.)
+  const setStoreUser = useAuthStore((state) => state.setUser);
   const fileInputRef = useRef(null);
 
+  // Local form data — fetched directly from the API, isolated from the global user store.
+  // This prevents AuthProvider's background re-fetches from interfering with form state.
+  const [profileData, setProfileData] = useState(null);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState(null);
   const [isFetching, setIsFetching] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { handleLogout } = useLogout();
   const setPendingToast = usePendingToastStore(
     (state) => state.setPendingToast,
   );
+
+  const avatarPreview =
+    localAvatarUrl === 'removed'
+      ? null
+      : (localAvatarUrl ??
+        profileData?.avatarUrl ??
+        profileData?.avatar ??
+        null);
 
   const {
     register,
@@ -76,20 +88,28 @@ export default function ProfileForm() {
   });
 
   useEffect(() => {
-    if (!user) return;
+    const fetchProfile = async () => {
+      try {
+        const res = await authService.profile();
+        const data = res.data.data;
+        setProfileData(data);
+        reset({
+          name: data.name ?? '',
+          password: '',
+          avatar: undefined,
+        });
+      } catch {
+        toast.error('Failed to load profile', {
+          description:
+            'Could not load your profile data. Please refresh the page.',
+        });
+      } finally {
+        setIsFetching(false);
+      }
+    };
 
-    reset({
-      name: user.name ?? '',
-      password: '',
-      avatar: undefined,
-    });
-
-    if (user.avatarUrl ?? user.avatar) {
-      setAvatarPreview(user.avatarUrl ?? user.avatar);
-    }
-
-    setIsFetching(false);
-  }, [user, reset]);
+    fetchProfile();
+  }, [reset]);
 
   if (isFetching) {
     return (
@@ -109,23 +129,22 @@ export default function ProfileForm() {
       ACCEPTED_IMAGE_TYPES.includes(file.type) &&
       file.size <= MAX_FILE_SIZE
     ) {
-      if (avatarPreview?.startsWith('blob:')) {
-        URL.revokeObjectURL(avatarPreview);
+      if (localAvatarUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(localAvatarUrl);
       }
-      const objectUrl = URL.createObjectURL(file);
-      setAvatarPreview(objectUrl);
+      setLocalAvatarUrl(URL.createObjectURL(file));
     } else {
-      setAvatarPreview(null);
+      setLocalAvatarUrl(null);
     }
   };
 
   const handleRemoveAvatar = () => {
-    if (avatarPreview?.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarPreview);
+    if (localAvatarUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(localAvatarUrl);
     }
 
     setValue('avatar', undefined, { shouldValidate: false });
-    setAvatarPreview(null);
+    setLocalAvatarUrl('removed');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -162,8 +181,16 @@ export default function ProfileForm() {
         return;
       }
 
-      // reload user profile after successful update
-      useAuthStore.setState({ user: res.data.data });
+      const updated = res.data.data;
+
+      // Update local form data source
+      setProfileData(updated);
+
+      // Clear local avatar override — the server-returned URL will now show
+      setLocalAvatarUrl(null);
+
+      // Sync global store so navbar/permissions stay up to date
+      setStoreUser(updated);
 
       toast.success('Success', {
         description: 'Profile updated successfully!',
@@ -183,14 +210,15 @@ export default function ProfileForm() {
 
   const resetForm = () => {
     reset({
-      name: user?.name ?? '',
+      name: profileData?.name ?? '',
       password: '',
       avatar: undefined,
     });
-    if (avatarPreview?.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarPreview);
+    if (localAvatarUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(localAvatarUrl);
     }
-    setAvatarPreview(user?.avatarUrl ?? user?.avatar ?? null);
+    // Clear local override so avatarPreview falls back to server URL
+    setLocalAvatarUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -222,7 +250,7 @@ export default function ProfileForm() {
             <Input
               id='email'
               type='email'
-              value={user?.email ?? ''}
+              value={profileData?.email ?? ''}
               readOnly
               className='bg-slate-50 dark:bg-slate-700 cursor-not-allowed'
             />
