@@ -178,14 +178,13 @@ export default function Home() {
       {/* Footer */}
       <footer className='border-t border-slate-200 dark:border-slate-700'>
         <div className='max-w-6xl mx-auto px-6 py-6 text-center text-sm text-slate-400 dark:text-slate-500'>
-          Built with Next.js &amp; TailwindCSS. Open source and free to use.
-          &copy; {new Date().getFullYear()}. Made by{' '}
+          &copy; {new Date().getFullYear()} - present. Made with ❤️ by{' '}
           <a
             href='https://github.com/andrealfian420'
             target='_blank'
             className='text-sky-600 hover:text-sky-700 dark:hover:text-sky-400 transition-colors'
           >
-            Alfian Andre R.
+            Alfian Andre R
           </a>
           .
         </div>
