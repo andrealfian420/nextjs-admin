@@ -17,7 +17,7 @@ export default function ViewDashboard() {
           <CardHeader>
             <CardTitle>Total Users</CardTitle>
             <CardDescription className='mt-2'>
-              <p className='text-2xl font-bold'>120</p>
+              <p className='text-2xl font-bold text-white'>120</p>
             </CardDescription>
           </CardHeader>
         </Card>
@@ -26,7 +26,7 @@ export default function ViewDashboard() {
           <CardHeader>
             <CardTitle>Orders</CardTitle>
             <CardDescription className='mt-2'>
-              <p className='text-2xl font-bold'>54</p>
+              <p className='text-2xl font-bold text-white'>54</p>
             </CardDescription>
           </CardHeader>
         </Card>
@@ -35,7 +35,7 @@ export default function ViewDashboard() {
           <CardHeader>
             <CardTitle>Revenue</CardTitle>
             <CardDescription className='mt-2'>
-              <p className='text-2xl font-bold'>$8,200</p>
+              <p className='text-2xl font-bold text-white'>$8,200</p>
             </CardDescription>
           </CardHeader>
         </Card>

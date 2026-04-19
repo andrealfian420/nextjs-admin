@@ -54,12 +54,26 @@ function DataComparisonTable({ oldData, newData }) {
   }
 
   const formatValue = (val) => {
-    if (val === null || val === undefined)
+    if (val === null || val === undefined) {
       return (
         <span className='italic text-slate-400 dark:text-slate-500'>null</span>
       );
-    if (typeof val === 'object')
+    }
+
+    if (Array.isArray(val)) {
+      return (
+        <ul className='list-disc list-inside text-sm'>
+          {val.map((item, idx) => (
+            <li key={idx}>{String(item)}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    if (typeof val === 'object') {
       return <code className='text-xs'>{JSON.stringify(val)}</code>;
+    }
+
     return String(val);
   };
 
