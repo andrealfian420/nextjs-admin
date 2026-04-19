@@ -63,6 +63,13 @@ export default function ProfileForm() {
   const setPendingToast = usePendingToastStore(
     (state) => state.setPendingToast,
   );
+  const redirectTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+    };
+  }, []);
 
   const avatarPreview =
     localAvatarUrl === 'removed'
@@ -175,7 +182,7 @@ export default function ProfileForm() {
           description: 'Your password has been updated. Please sign in again.',
         });
 
-        setTimeout(async () => {
+        redirectTimerRef.current = setTimeout(async () => {
           await handleLogout();
         }, 2000);
         return;

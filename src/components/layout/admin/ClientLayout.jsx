@@ -5,7 +5,6 @@ import Navbar from '@/components/layout/admin/Navbar';
 import { useEffect } from 'react';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { TooltipProvider } from '@/components/ui/Tooltip';
-import { Toaster } from '@/components/ui/Sonner';
 
 export default function ClientLayout({ children }) {
   const checkScreenSize = useSidebarStore((state) => state.checkScreenSize);
@@ -32,7 +31,6 @@ export default function ClientLayout({ children }) {
           </main>
         </div>
       </div>
-      <Toaster />
     </TooltipProvider>
   );
 }

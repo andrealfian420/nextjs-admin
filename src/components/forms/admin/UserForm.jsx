@@ -78,6 +78,13 @@ export default function UserForm({ isEdit = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetching, setIsFetching] = useState(isEdit);
   const [roles, setRoles] = useState([]);
+  const redirectTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+    };
+  }, []);
 
   const schema = userSchema(isEdit);
 
@@ -217,7 +224,7 @@ export default function UserForm({ isEdit = false }) {
           : 'User created successfully!',
       });
 
-      setTimeout(() => {
+      redirectTimerRef.current = setTimeout(() => {
         setIsSubmitting(false);
         router.push('/admin/users');
       }, 2000);

@@ -11,6 +11,7 @@ import DataTableSearch from './DataTableSearch';
 import DataTablePagination from './DataTablePagination';
 import { Button } from '../Button';
 import { RefreshCwIcon } from 'lucide-react';
+import { toast } from '../Toast';
 
 export default function DataTable({
   columns,
@@ -68,19 +69,26 @@ export default function DataTable({
 
   const loadData = async () => {
     setLoading(true);
-    const sort_by = sorting[0]?.id ?? null;
-    const sort_dir = sorting[0]?.desc ? 'desc' : 'asc';
-    const res = await fetchData({
-      page,
-      per_page: limit,
-      search,
-      ...(sort_by && { sort_by, sort_dir }),
-    });
+    try {
+      const sort_by = sorting[0]?.id ?? null;
+      const sort_dir = sorting[0]?.desc ? 'desc' : 'asc';
+      const res = await fetchData({
+        page,
+        per_page: limit,
+        search,
+        ...(sort_by && { sort_by, sort_dir }),
+      });
 
-    setData(res.data.data);
-    setLinks(res.data.links);
-    setTotalPages(res.data.meta.last_page);
-    setLoading(false);
+      setData(res.data.data);
+      setLinks(res.data.links);
+      setTotalPages(res.data.meta.last_page);
+    } catch {
+      toast.error('Failed to load data', {
+        description: 'An error occurred. Please try refreshing.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

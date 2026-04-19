@@ -18,7 +18,7 @@ import { roleService } from '@/services/roleService';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RefreshCwIcon } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -41,6 +41,13 @@ export default function RoleForm({ isEdit = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetching, setIsFetching] = useState(isEdit);
   const [accessList, setAccessList] = useState([]);
+  const redirectTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+    };
+  }, []);
 
   const schema = roleSchema(isEdit);
 
@@ -157,7 +164,7 @@ export default function RoleForm({ isEdit = false }) {
           : 'Role created successfully!',
       });
 
-      setTimeout(() => {
+      redirectTimerRef.current = setTimeout(() => {
         setIsSubmitting(false);
         router.push('/admin/roles');
       }, 2000);
