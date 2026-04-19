@@ -21,7 +21,7 @@ export const logService = {
   },
 
   async getActivityLog(id) {
-    const res = await api.get(`/activity-logs/${id}`);
+    const res = await api.get(`/activity-logs/${encodeURIComponent(id)}`);
     return res.data;
   },
 };

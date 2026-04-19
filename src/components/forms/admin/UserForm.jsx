@@ -30,8 +30,22 @@ function userSchema(isEdit = false) {
     name: z.string().min(1, 'Full name is required'),
     email: z.string().email('Invalid email address'),
     password: isEdit
-      ? z.string().optional().or(z.literal(''))
-      : z.string().min(8, 'Password must be at least 8 characters'),
+      ? z
+          .string()
+          .refine((val) => {
+            // min 8, has 1 uppercase, 1 number and special character
+            return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
+              val,
+            );
+          }, 'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character')
+          .optional()
+          .or(z.literal(''))
+      : z.string().refine((val) => {
+          // min 8, has 1 uppercase, 1 number and special character
+          return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
+            val,
+          );
+        }, 'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character'),
     avatar: z
       .any()
       .refine(
@@ -153,6 +167,10 @@ export default function UserForm({ isEdit = false }) {
       ACCEPTED_IMAGE_TYPES.includes(file.type) &&
       file.size <= MAX_FILE_SIZE
     ) {
+      if (avatarPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+
       const objectUrl = URL.createObjectURL(file);
       setAvatarPreview(objectUrl);
     } else {
@@ -161,6 +179,9 @@ export default function UserForm({ isEdit = false }) {
   };
 
   const handleRemoveAvatar = () => {
+    if (avatarPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(avatarPreview);
+    }
     setValue('avatar', undefined, { shouldValidate: false });
     setAvatarPreview(null);
     if (fileInputRef.current) {
@@ -218,6 +239,10 @@ export default function UserForm({ isEdit = false }) {
   };
 
   const resetForm = async () => {
+    if (avatarPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+
     if (!isEdit) {
       reset({
         name: '',

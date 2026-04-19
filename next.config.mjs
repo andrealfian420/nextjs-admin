@@ -2,10 +2,23 @@
 const nextConfig = {
   reactCompiler: true,
   images: {
-    remotePatterns: [
-      { protocol: 'http', hostname: 'localhost' },
-      // { protocol: 'https', hostname: 'i.pravatar.cc' }, // Example for external image source
-    ],
+    remotePatterns: [{ protocol: 'http', hostname: 'localhost' }],
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
+    ];
   },
 };
 export default nextConfig;

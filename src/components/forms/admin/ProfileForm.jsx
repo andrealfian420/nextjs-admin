@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/Toast';
-import { fetchUser } from '@/lib/auth';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,7 +19,19 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
-  password: z.string().optional().or(z.literal('')),
+  password: z
+    .string()
+    .refine((val) => {
+      if (!val) {
+        return true; // allow empty password (means no change)
+      }
+
+      // min 8, has 1 uppercase, 1 number and special character
+      return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
+        val,
+      );
+    }, 'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character')
+    .optional(),
   avatar: z
     .any()
     .optional()
@@ -36,7 +47,6 @@ const profileSchema = z.object({
 
 export default function ProfileForm() {
   const user = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
   const fileInputRef = useRef(null);
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -93,13 +103,21 @@ export default function ProfileForm() {
       ACCEPTED_IMAGE_TYPES.includes(file.type) &&
       file.size <= MAX_FILE_SIZE
     ) {
-      setAvatarPreview(URL.createObjectURL(file));
+      if (avatarPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      const objectUrl = URL.createObjectURL(file);
+      setAvatarPreview(objectUrl);
     } else {
       setAvatarPreview(null);
     }
   };
 
   const handleRemoveAvatar = () => {
+    if (avatarPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+
     setValue('avatar', undefined, { shouldValidate: false });
     setAvatarPreview(null);
     if (fileInputRef.current) {
@@ -146,6 +164,9 @@ export default function ProfileForm() {
       password: '',
       avatar: undefined,
     });
+    if (avatarPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(avatarPreview);
+    }
     setAvatarPreview(user?.avatarUrl ?? user?.avatar ?? null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';

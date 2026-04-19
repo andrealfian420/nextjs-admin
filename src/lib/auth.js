@@ -14,13 +14,24 @@ export async function fetchUser(token) {
     const user = res.data.data;
     useAuthStore.getState().setUser(user);
   } catch (error) {
-    // logout user if fetching profile fails (e.g., token is invalid)
-    forceLogout();
+    // If fetching the user fails (e.g., token is invalid), log out the user
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      await forceLogout();
+    }
   }
 }
 
-export function forceLogout() {
+export async function forceLogout() {
   useAuthStore.getState().logout();
+
+  try {
+    await axios.post(`${apiUrl}/logout`, null, {
+      withCredentials: true,
+    });
+  } catch {
+    // token might already be invalid, ignore errors during logout
+    // keep redirecting the user to the login page to avoid confusion
+  }
 
   if (typeof window !== 'undefined') {
     window.location.href = '/login';

@@ -21,7 +21,7 @@ export const userService = {
   },
 
   async getUser(slug) {
-    const res = await api.get(`/users/${slug}`);
+    const res = await api.get(`/users/${encodeURIComponent(slug)}`);
     return res.data;
   },
 
@@ -31,12 +31,12 @@ export const userService = {
   },
 
   async updateUser(slug, data) {
-    const res = await api.put(`/users/${slug}`, data);
+    const res = await api.put(`/users/${encodeURIComponent(slug)}`, data);
     return res.data;
   },
 
   async deleteUser(slug) {
-    const res = await api.delete(`/users/${slug}`);
+    const res = await api.delete(`/users/${encodeURIComponent(slug)}`);
     return res.data;
   },
 };

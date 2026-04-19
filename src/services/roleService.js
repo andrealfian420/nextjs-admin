@@ -22,7 +22,7 @@ export const roleService = {
   },
 
   async getRole(roleId) {
-    const res = await api.get(`/roles/${roleId}`);
+    const res = await api.get(`/roles/${encodeURIComponent(roleId)}`);
     return res.data;
   },
 
@@ -32,12 +32,12 @@ export const roleService = {
   },
 
   async updateRole(roleId, roleData) {
-    const res = await api.put(`/roles/${roleId}`, roleData);
+    const res = await api.put(`/roles/${encodeURIComponent(roleId)}`, roleData);
     return res.data;
   },
 
   async deleteRole(roleId) {
-    const res = await api.delete(`/roles/${roleId}`);
+    const res = await api.delete(`/roles/${encodeURIComponent(roleId)}`);
     return res.data;
   },
 

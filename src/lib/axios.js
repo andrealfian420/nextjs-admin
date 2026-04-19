@@ -78,7 +78,7 @@ api.interceptors.response.use(
       } catch (error) {
         processQueue(error, null);
 
-        forceLogout();
+        await forceLogout();
 
         return Promise.reject(error);
       } finally {
