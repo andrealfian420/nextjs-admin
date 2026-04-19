@@ -98,7 +98,7 @@ export default function Home() {
             <span className='text-sky-600'>Built for Developers</span>
           </h1>
           <p className='max-w-2xl mx-auto text-lg text-slate-500 dark:text-slate-400 mb-10'>
-            A clean, full-featured admin starter built with Next.js 15,
+            A clean, full-featured admin starter built with Next.js 16,
             TailwindCSS 4, shadcn/ui, and a role-based permission system — ready
             to extend and ship.
           </p>
