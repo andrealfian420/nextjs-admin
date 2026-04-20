@@ -42,16 +42,18 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ```bash
 npm run dev
+```
+
 The app will be available at `http://localhost:3000`.
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
+| Command         | Description              |
+| --------------- | ------------------------ |
+| `npm run dev`   | Start development server |
+| `npm run build` | Build for production     |
+| `npm run start` | Start production server  |
+| `npm run lint`  | Run ESLint               |
 
 ## Features
 
@@ -69,24 +71,23 @@ The app will be available at `http://localhost:3000`.
 
 ## Tech Stack
 
-| Category | Library |
-|----------|---------|
-| Framework | [Next.js 16](https://nextjs.org) (App Router) |
-| Language | JavaScript (JSX) with React Compiler |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com) |
-| UI Components | [Radix UI](https://radix-ui.com), [shadcn/ui](https://ui.shadcn.com) |
-| Forms | [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev) |
-| HTTP Client | [Axios](https://axios-http.com) with interceptors for auto token refresh |
-| State Management | [Zustand](https://zustand-demo.pmnd.rs) |
-| Table | [TanStack Table v8](https://tanstack.com/table) |
-| Rich Editor | [Tiptap](https://tiptap.dev) |
-| Notifications | [Sonner](https://sonner.emilkowal.ski) |
-| Icons | [Lucide React](https://lucide.dev) |
+| Category         | Library                                                                  |
+| ---------------- | ------------------------------------------------------------------------ |
+| Framework        | [Next.js 16](https://nextjs.org) (App Router)                            |
+| Language         | JavaScript (JSX) with React Compiler                                     |
+| Styling          | [Tailwind CSS v4](https://tailwindcss.com)                               |
+| UI Components    | [Radix UI](https://radix-ui.com), [shadcn/ui](https://ui.shadcn.com)     |
+| Forms            | [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev)  |
+| HTTP Client      | [Axios](https://axios-http.com) with interceptors for auto token refresh |
+| State Management | [Zustand](https://zustand-demo.pmnd.rs)                                  |
+| Table            | [TanStack Table v8](https://tanstack.com/table)                          |
+| Rich Editor      | [Tiptap](https://tiptap.dev)                                             |
+| Notifications    | [Sonner](https://sonner.emilkowal.ski)                                   |
+| Icons            | [Lucide React](https://lucide.dev)                                       |
 
 ## Project Structure
 
 ```
-
 src/
 ├── app/ # Next.js App Router pages
 │ ├── (auth)/ # Auth pages (login, forgot-password)
@@ -102,28 +103,27 @@ src/
 ├── lib/ # Utilities (axios instance, auth helpers, permissions)
 ├── services/ # API service modules (authService, userService, etc.)
 └── store/ # Zustand stores (useAuthStore, usePendingToastStore, etc.)
-
 ```
 
 ## Backend Integration
 
 This project is built to consume the [express-core](https://github.com/andrealfian420/express-core) REST API. The expected endpoints include:
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /auth/login` | Login with email and password |
-| `POST /auth/logout` | Logout and invalidate refresh token |
-| `POST /auth/refresh` | Refresh access token using HttpOnly cookie |
-| `GET /profile` | Get authenticated user profile |
-| `PUT /profile` | Update profile (name, password, avatar) |
-| `GET/POST /users` | List and create users |
-| `GET/PUT/DELETE /users/:slug` | Get, update, delete user |
-| `GET/POST /roles` | List and create roles |
-| `GET/PUT/DELETE /roles/:slug` | Get, update, delete role |
-| `GET /roles/access-list` | Get available permissions |
-| `GET /activity-logs` | List activity logs |
-| `GET /activity-logs/:id` | Get activity log detail |
-| `GET /utils/role-options` | Get role options for select inputs |
+| Endpoint                      | Description                                |
+| ----------------------------- | ------------------------------------------ |
+| `POST /auth/login`            | Login with email and password              |
+| `POST /auth/logout`           | Logout and invalidate refresh token        |
+| `POST /auth/refresh`          | Refresh access token using HttpOnly cookie |
+| `GET /profile`                | Get authenticated user profile             |
+| `PUT /profile`                | Update profile (name, password, avatar)    |
+| `GET/POST /users`             | List and create users                      |
+| `GET/PUT/DELETE /users/:slug` | Get, update, delete user                   |
+| `GET/POST /roles`             | List and create roles                      |
+| `GET/PUT/DELETE /roles/:slug` | Get, update, delete role                   |
+| `GET /roles/access-list`      | Get available permissions                  |
+| `GET /activity-logs`          | List activity logs                         |
+| `GET /activity-logs/:id`      | Get activity log detail                    |
+| `GET /utils/role-options`     | Get role options for select inputs         |
 
 The API is expected to return refresh tokens as HttpOnly cookies and access tokens in the response body.
 
@@ -138,4 +138,3 @@ The API is expected to return refresh tokens as HttpOnly cookies and access toke
 ## License
 
 Copyright &copy; 2026 - Present Alfian Andre Ramadhan. All rights reserved.
-```
