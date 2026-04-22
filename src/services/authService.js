@@ -1,16 +1,18 @@
 import api from '@/lib/axios';
+import axios from 'axios';
 
 // Authentication service for handling login, registration, logout, and token refresh
 export const authService = {
-  // _retry: true prevents the 401 interceptor from attempting a token refresh
-  // on auth endpoints — a 401 here means invalid credentials, not an expired token.
-  login: (data) => api.post('/auth/login', data, { _retry: true }),
+  // login/logout/refreshToken go through Next.js API routes so the refreshToken
+  // cookie is set on the Next.js domain (making it readable by middleware).
+
+  login: (data) => axios.post('/api/auth/login', data),
 
   register: (data) => api.post('/auth/register', data, { _retry: true }),
 
-  logout: () => api.post('/auth/logout'),
+  logout: () => axios.post('/api/auth/logout'),
 
-  refreshToken: () => api.post('/auth/refresh', {}, { _retry: true }),
+  refreshToken: () => axios.post('/api/auth/refresh'),
 
   profile: () => api.get('/profile'),
 

@@ -25,9 +25,7 @@ export async function forceLogout() {
   useAuthStore.getState().logout();
 
   try {
-    await axios.post(`${apiUrl}/logout`, null, {
-      withCredentials: true,
-    });
+    await axios.post('/api/auth/logout');
   } catch {
     // token might already be invalid, ignore errors during logout
     // keep redirecting the user to the login page to avoid confusion
