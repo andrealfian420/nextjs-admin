@@ -17,25 +17,33 @@ function forwardSetCookies(backendRes, nextRes) {
 }
 
 export async function POST(request) {
-  const body = await request.json();
+  try {
+    const body = await request.json();
 
-  const clientIp =
-    request.headers.get('x-forwarded-for') ??
-    request.headers.get('x-real-ip') ??
-    'unknown';
+    const clientIp =
+      request.headers.get('x-forwarded-for') ??
+      request.headers.get('x-real-ip') ??
+      'unknown';
 
-  const res = await fetch(`${apiUrl}/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Forwarded-For': clientIp,
-    },
-    body: JSON.stringify(body),
-  });
+    const res = await fetch(`${apiUrl}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Forwarded-For': clientIp,
+      },
+      body: JSON.stringify(body),
+    });
 
-  const data = await res.json();
-  const response = NextResponse.json(data, { status: res.status });
-  forwardSetCookies(res, response);
+    const data = await res.json();
+    const response = NextResponse.json(data, { status: res.status });
+    forwardSetCookies(res, response);
 
-  return response;
+    return response;
+  } catch (err) {
+    console.error('[/api/auth/login]', err);
+    return NextResponse.json(
+      { message: 'Auth service unavailable' },
+      { status: 503 },
+    );
+  }
 }

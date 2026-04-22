@@ -15,26 +15,34 @@ function forwardSetCookies(backendRes, nextRes) {
 }
 
 export async function POST(request) {
-  // Forward the browser's cookies (including refreshToken) to the backend
-  const cookieHeader = request.headers.get('cookie') ?? '';
+  try {
+    // Forward the browser's cookies (including refreshToken) to the backend
+    const cookieHeader = request.headers.get('cookie') ?? '';
 
-  const clientIp =
-    request.headers.get('x-forwarded-for') ??
-    request.headers.get('x-real-ip') ??
-    'unknown';
+    const clientIp =
+      request.headers.get('x-forwarded-for') ??
+      request.headers.get('x-real-ip') ??
+      'unknown';
 
-  const res = await fetch(`${apiUrl}/auth/refresh`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: cookieHeader,
-      'X-Forwarded-For': clientIp,
-    },
-  });
+    const res = await fetch(`${apiUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: cookieHeader,
+        'X-Forwarded-For': clientIp,
+      },
+    });
 
-  const data = await res.json();
-  const response = NextResponse.json(data, { status: res.status });
-  forwardSetCookies(res, response);
+    const data = await res.json();
+    const response = NextResponse.json(data, { status: res.status });
+    forwardSetCookies(res, response);
 
-  return response;
+    return response;
+  } catch (err) {
+    console.error('[/api/auth/refresh]', err);
+    return NextResponse.json(
+      { message: 'Auth service unavailable' },
+      { status: 503 },
+    );
+  }
 }

@@ -15,30 +15,43 @@ function forwardSetCookies(backendRes, nextRes) {
 }
 
 export async function POST(request) {
-  const cookieHeader = request.headers.get('cookie') ?? '';
-
-  const res = await fetch(`${apiUrl}/auth/logout`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: cookieHeader,
-    },
-  });
-
-  let data = {};
   try {
-    data = await res.json();
-  } catch {
-    // logout may not return JSON
+    const cookieHeader = request.headers.get('cookie') ?? '';
+
+    const res = await fetch(`${apiUrl}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: cookieHeader,
+      },
+    });
+
+    let data = {};
+    try {
+      data = await res.json();
+    } catch {
+      // logout may not return JSON
+    }
+
+    const response = NextResponse.json(data, {
+      status: res.ok ? 200 : res.status,
+    });
+    forwardSetCookies(res, response);
+
+    // Ensure the cookie is cleared on the Next.js domain regardless of backend response
+    response.cookies.delete('refreshToken');
+
+    return response;
+  } catch (err) {
+    console.error('[/api/auth/logout]', err);
+
+    const response = NextResponse.json(
+      { message: 'Auth service unavailable' },
+      { status: 503 },
+    );
+
+    // Still clear the cookie even if backend is unreachable
+    response.cookies.delete('refreshToken');
+    return response;
   }
-
-  const response = NextResponse.json(data, {
-    status: res.ok ? 200 : res.status,
-  });
-  forwardSetCookies(res, response);
-
-  // Ensure the cookie is cleared on the Next.js domain regardless of backend response
-  response.cookies.delete('refreshToken');
-
-  return response;
 }
