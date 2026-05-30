@@ -159,4 +159,4 @@ The API is expected to return refresh tokens as HttpOnly cookies and access toke
 
 ## License
 
-Copyright &copy; 2026 - Present Alfian Andre Ramadhan. All rights reserved.
+Copyright &copy; 2026 - Present Alfian Andre Ramadhan.
