@@ -95,3 +95,17 @@ export interface ActivityLogRow {
   user: { name: string };
   causedAt: string;
 }
+
+export interface ActivityLog {
+  id: number;
+  userId: number;
+  action: string;
+  description: string;
+  subjectType: string;
+  subjectId: number;
+  oldData: Record<string, unknown> | null;
+  newData: Record<string, unknown> | null;
+  createdAt: string;
+  user: { id: number; name: string };
+  causedAt: string;
+}

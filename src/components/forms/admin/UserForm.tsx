@@ -14,10 +14,11 @@ import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/Toast';
 import { userService } from '@/services/userService';
 import { utilService } from '@/services/utilService';
+import { isAxiosError } from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, RefreshCwIcon, Upload, X } from 'lucide-react';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -77,6 +78,7 @@ export default function UserForm({ isEdit = false }) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetching, setIsFetching] = useState(isEdit);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [roles, setRoles] = useState<{ value: string; label: string }[]>([]);
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -126,9 +128,10 @@ export default function UserForm({ isEdit = false }) {
           setAvatarPreview(user.avatarUrl ?? null);
         }
       } catch (err: unknown) {
-        toast.error('Error', {
-          description: 'Failed to load user data.',
-        });
+        if (isAxiosError(err) && err.response?.status === 404) {
+          setIsNotFound(true);
+          return;
+        }
       } finally {
         setIsFetching(false);
       }
@@ -155,6 +158,10 @@ export default function UserForm({ isEdit = false }) {
 
     fetchOptions();
   }, []);
+
+  if (isNotFound) {
+    notFound();
+  }
 
   if (isFetching) {
     return (

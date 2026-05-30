@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { logService } from '@/services/logService';
+import { isAxiosError } from 'axios';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
-import { useRouter } from 'next/navigation';
 import { toast } from '@/components/ui/Toast';
+import type { ActivityLog } from '@/types';
 
 const ACTION_VARIANTS = {
   CREATE:
@@ -140,8 +141,9 @@ function DataComparisonTable({
 
 export default function DetailActivityLog() {
   const { id } = useParams<{ id: string }>();
-  const [log, setLog] = useState<Record<string, any> | null>(null);
+  const [log, setLog] = useState<ActivityLog | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -149,7 +151,11 @@ export default function DetailActivityLog() {
       try {
         const res = await logService.getActivityLog(id);
         setLog(res.data);
-      } catch {
+      } catch (err: unknown) {
+        if (isAxiosError(err) && err.response?.status === 404) {
+          setIsNotFound(true);
+          return;
+        }
         toast.error('Failed to load log', {
           description: 'The log entry could not be loaded.',
         });
@@ -160,7 +166,11 @@ export default function DetailActivityLog() {
     };
 
     fetchLog();
-  }, [id]);
+  }, [id, router]);
+
+  if (isNotFound) {
+    notFound();
+  }
 
   if (loading) {
     return (
@@ -186,7 +196,7 @@ export default function DetailActivityLog() {
   }
 
   if (!log) {
-    return router.push('/admin/activity-logs'); // push back to list if log not found
+    return null;
   }
 
   const hasChanges = log.oldData || log.newData;

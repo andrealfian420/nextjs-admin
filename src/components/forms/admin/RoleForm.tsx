@@ -15,9 +15,10 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Textarea } from '@/components/ui/Textarea';
 import { toast } from '@/components/ui/Toast';
 import { roleService } from '@/services/roleService';
+import { isAxiosError } from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RefreshCwIcon } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
@@ -56,6 +57,7 @@ export default function RoleForm({ isEdit = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingRole, setIsFetchingRole] = useState(isEdit);
   const [isFetching, setIsFetching] = useState(false);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [accessList, setAccessList] = useState<AccessModule[]>([]);
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -123,9 +125,10 @@ export default function RoleForm({ isEdit = false }) {
           accesses: role.access ?? [],
         });
       } catch (err: unknown) {
-        toast.error('Error', {
-          description: 'Failed to load role data.',
-        });
+        if (isAxiosError(err) && err.response?.status === 404) {
+          setIsNotFound(true);
+          return;
+        }
       } finally {
         setIsFetchingRole(false);
       }
@@ -152,6 +155,10 @@ export default function RoleForm({ isEdit = false }) {
 
     fetchAccessList();
   }, []);
+
+  if (isNotFound) {
+    notFound();
+  }
 
   if (isFetching || isFetchingRole) {
     return (
