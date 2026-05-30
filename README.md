@@ -35,8 +35,10 @@ cp .env.example .env
 Edit `.env` and set your backend API URL:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
+API_URL=http://localhost:3001/api/v1
 ```
+
+> **Note:** `API_URL` is a server-only variable — it is never exposed to the browser. All client-side requests are routed through Next.js API routes (BFF pattern), so the real backend URL remains hidden from end users.
 
 **4. Start the development server**
 
@@ -89,9 +91,12 @@ The app will be available at `http://localhost:3000`.
 
 ```
 src/
-├── app/ # Next.js App Router pages
-│ ├── (auth)/ # Auth pages (login, forgot-password)
-│ └── admin/ # Protected admin pages
+├── app/                # Next.js App Router pages
+│   ├── (auth)/         # Auth pages (login, forgot-password)
+│   ├── admin/          # Protected admin pages
+│   └── api/            # BFF proxy routes
+│       ├── [...path]/  # Catch-all reverse proxy
+│       └── auth/       # Auth-specific handlers (cookie management)
 ├── components/
 │ ├── admin/ # Page-specific view components
 │ ├── forms/ # Form components with validation
@@ -104,6 +109,21 @@ src/
 ├── services/ # API service modules (authService, userService, etc.)
 └── store/ # Zustand stores (useAuthStore, usePendingToastStore, etc.)
 ```
+
+## Architecture
+
+### BFF (Backend-for-Frontend) Proxy
+
+All API requests from the browser are routed through Next.js API routes, acting as a reverse proxy to the real backend. This ensures the real API URL is never visible in browser network requests.
+
+```
+Browser → /api/users       → [Next.js Server] → http://real-backend/api/v1/users
+Browser → /api/auth/login  → [Next.js Server] → http://real-backend/api/v1/auth/login
+```
+
+- **Catch-all proxy** (`src/app/api/[...path]/route.ts`) — handles all general API requests with path whitelisting and streaming response
+- **Auth-specific routes** (`src/app/api/auth/*/route.ts`) — handle login, logout, and token refresh with bespoke cookie management
+- The real backend URL is stored in the server-only `API_URL` environment variable (no `NEXT_PUBLIC_` prefix)
 
 ## Backend Integration
 
@@ -129,6 +149,8 @@ The API is expected to return refresh tokens as HttpOnly cookies and access toke
 
 ## Security
 
+- Real API URL hidden from browser via BFF proxy pattern
+- Proxy path whitelist prevents open-proxy abuse
 - Access tokens stored in memory only (never `localStorage`)
 - Refresh tokens stored as HttpOnly cookies managed by the backend
 - Security headers configured in `next.config.ts` (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)

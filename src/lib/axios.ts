@@ -2,10 +2,8 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 import { fetchUser, forceLogout } from './auth';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
 const api = axios.create({
-  baseURL: apiUrl,
+  baseURL: '/api',
   withCredentials: true,
 });
 

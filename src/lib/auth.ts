@@ -1,11 +1,9 @@
 import { useAuthStore } from '@/store/useAuthStore';
 import axios from 'axios';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
 export async function fetchUser(token: string): Promise<void> {
   try {
-    const res = await axios.get(`${apiUrl}/profile`, {
+    const res = await axios.get('/api/profile', {
       headers: {
         Authorization: `Bearer ${token}`,
       },

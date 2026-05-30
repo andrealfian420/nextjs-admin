@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = process.env.API_URL;
 
 // Forward Set-Cookie headers from the backend response, stripping the domain
 // attribute so cookies are bound to the Next.js app domain instead.
