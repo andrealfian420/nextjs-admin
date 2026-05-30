@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import ThemeToggle from '@/components/frontend/ThemeToggle';
+import { isAxiosError } from 'axios';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -26,12 +27,15 @@ export default function ForgotPasswordForm() {
       await authService.forgotPassword({ email });
 
       setSuccess(true);
-    } catch (error: unknown) {
-      setError(
-        (error as any).response?.data?.message ||
-          (error as any).message ||
-          'Something went wrong. Please try again.',
-      );
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(
+          err.response?.data?.message ||
+            'Something went wrong. Please try again.',
+        );
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

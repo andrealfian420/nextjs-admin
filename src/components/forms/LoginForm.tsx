@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/Toast';
+import { isAxiosError } from 'axios';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -65,21 +66,28 @@ export default function LoginForm() {
         router.push('/admin');
       }, duration);
     } catch (err: unknown) {
-      const apiErrors = (err as any).response?.data?.errors;
-      const apiMessage = (err as any).response?.data?.message;
+      if (isAxiosError(err)) {
+        const apiErrors = err.response?.data?.errors;
+        const apiMessage = err.response?.data?.message;
 
-      if (apiErrors) {
-        apiErrors.forEach((e: { field: string; message: string }) => {
-          setError(e.field as 'email' | 'password', { message: e.message });
-        });
+        if (apiErrors) {
+          apiErrors.forEach((e: { field: string; message: string }) => {
+            setError(e.field as 'email' | 'password', { message: e.message });
+          });
+        } else {
+          toast.error(
+            apiMessage || 'Login failed. Please check your credentials.',
+            {
+              position: 'top-center',
+              duration: 10000,
+            },
+          );
+        }
       } else {
-        toast.error(
-          apiMessage || 'Login failed. Please check your credentials.',
-          {
-            position: 'top-center',
-            duration: 10000,
-          },
-        );
+        toast.error('Login failed. Please check your credentials.', {
+          position: 'top-center',
+          duration: 10000,
+        });
       }
 
       setIsLoading(false);
