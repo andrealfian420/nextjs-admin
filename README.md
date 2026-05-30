@@ -74,7 +74,7 @@ The app will be available at `http://localhost:3000`.
 | Category         | Library                                                                  |
 | ---------------- | ------------------------------------------------------------------------ |
 | Framework        | [Next.js 16](https://nextjs.org) (App Router)                            |
-| Language         | JavaScript (JSX) with React Compiler                                     |
+| Language         | TypeScript (TSX) with React Compiler                                     |
 | Styling          | [Tailwind CSS v4](https://tailwindcss.com)                               |
 | UI Components    | [Radix UI](https://radix-ui.com), [shadcn/ui](https://ui.shadcn.com)     |
 | Forms            | [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev)  |
@@ -131,7 +131,7 @@ The API is expected to return refresh tokens as HttpOnly cookies and access toke
 
 - Access tokens stored in memory only (never `localStorage`)
 - Refresh tokens stored as HttpOnly cookies managed by the backend
-- Security headers configured in `next.config.mjs` (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
+- Security headers configured in `next.config.ts` (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
 - All file uploads validated by type and size on the client before submission
 - Authorization enforced server-side — client-side guards are for UX only
 
