@@ -1,0 +1,47 @@
+import {
+  Database,
+  History,
+  LayoutDashboard,
+  Shield,
+  Users,
+} from 'lucide-react';
+import type { MenuItem } from '@/types';
+
+export const ADMIN_MENU: MenuItem[] = [
+  {
+    name: 'Dashboard',
+    icon: LayoutDashboard,
+    key: 'dash',
+    href: '/admin',
+    access: 'module.dashboard.index',
+  },
+  {
+    name: 'Master Data',
+    icon: Database,
+    key: 'master',
+    children: [
+      {
+        name: 'Users',
+        icon: Users,
+        key: 'users',
+        href: '/admin/users',
+        access: 'module.master-data.user.index',
+      },
+      {
+        name: 'Roles',
+        icon: Shield,
+        key: 'roles',
+        href: '/admin/roles',
+        access: 'module.master-data.role.index',
+      },
+    ],
+  },
+  { separator: true }, // separator item, if you need to divide sections
+  {
+    name: 'Activity Logs',
+    icon: History,
+    key: 'activity-logs',
+    href: '/admin/activity-logs',
+    access: 'module.activity-log.index',
+  },
+];
