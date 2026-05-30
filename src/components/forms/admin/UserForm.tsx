@@ -286,7 +286,7 @@ export default function UserForm({ isEdit = false }) {
   };
 
   return (
-    <div className='bg-white dark:bg-slate-800 p-4 rounded-lg'>
+    <div className='bg-white dark:bg-zinc-800 p-4 rounded-lg'>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           <div className='space-y-1.5'>
@@ -346,7 +346,7 @@ export default function UserForm({ isEdit = false }) {
                 type='button'
                 size='icon-sm'
                 variant='ghost'
-                className='absolute right-1 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-transparent'
+                className='absolute right-1 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-transparent'
                 onClick={() => setIsPasswordVisible((v) => !v)}
               >
                 {isPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -445,7 +445,7 @@ export default function UserForm({ isEdit = false }) {
 
         <div className='col-span-1 flex items-center justify-end gap-2 pt-2 mt-5'>
           <Button
-            className='bg-slate-700 hover:bg-slate-800 text-white cursor-pointer'
+            className='bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 cursor-pointer'
             type='submit'
             disabled={isSubmitting}
           >

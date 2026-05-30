@@ -48,16 +48,16 @@ export default function Navbar() {
     return (
       <User
         size={16}
-        className='text-slate-600 dark:text-slate-300 cursor-pointer'
+        className='text-zinc-600 dark:text-zinc-300 cursor-pointer'
       />
     );
   };
 
   return (
-    <header className='h-14 bg-white dark:bg-slate-800 border-b border-transparent dark:border-slate-700 flex items-center justify-between px-6'>
+    <header className='h-14 bg-white dark:bg-zinc-900 border-b border-zinc-200/70 dark:border-zinc-800/50 flex items-center justify-between px-6'>
       <div>
         <Menu
-          className='cursor-pointer hover:opacity-75 transition text-slate-700 dark:text-slate-300'
+          className='cursor-pointer hover:opacity-75 transition text-zinc-700 dark:text-zinc-300'
           size={18}
           onClick={setIsOpen}
         />
@@ -69,12 +69,12 @@ export default function Navbar() {
           <button
             onClick={toggleTheme}
             aria-label='Toggle theme'
-            className='relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer'
+            className='relative p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer'
           >
             {resolvedTheme === 'dark' ? (
-              <SunIcon size={18} className='text-slate-400' />
+              <SunIcon size={18} className='text-zinc-400' />
             ) : (
-              <MoonIcon size={18} className='text-slate-600' />
+              <MoonIcon size={18} className='text-zinc-600' />
             )}
           </button>
         )}
@@ -84,7 +84,7 @@ export default function Navbar() {
         </button> */}
 
         <div className='flex items-center gap-3'>
-          <div className='h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center'>
+          <div className='h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center'>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 {profilePicture()}
@@ -93,12 +93,12 @@ export default function Navbar() {
               <DropdownMenuContent className='mt-4 mr-4 p-0'>
                 <DropdownMenuItem
                   asChild
-                  className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'
+                  className='w-full h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 p-2 rounded-md transition cursor-pointer'
                 >
                   <Link href='/admin/profile'>Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'
+                  className='w-full h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 p-2 rounded-md transition cursor-pointer'
                   onClick={handleLogout}
                 >
                   Logout

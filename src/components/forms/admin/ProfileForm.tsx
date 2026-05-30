@@ -235,7 +235,7 @@ export default function ProfileForm() {
   };
 
   return (
-    <div className='bg-white dark:bg-slate-800 p-4 rounded-lg'>
+    <div className='bg-white dark:bg-zinc-800 p-4 rounded-lg'>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           <div className='space-y-1.5'>
@@ -262,7 +262,7 @@ export default function ProfileForm() {
               type='email'
               value={profileData?.email ?? ''}
               readOnly
-              className='bg-slate-50 dark:bg-slate-700 cursor-not-allowed'
+              className='bg-zinc-50 dark:bg-zinc-700 cursor-not-allowed'
             />
             <p className='text-xs text-muted-foreground min-h-2'>
               Email cannot be changed.
@@ -349,7 +349,7 @@ export default function ProfileForm() {
 
         <div className='col-span-1 flex items-center justify-end gap-2 pt-2 mt-5'>
           <Button
-            className='bg-slate-700 hover:bg-slate-800 text-white cursor-pointer'
+            className='bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 cursor-pointer'
             type='submit'
             disabled={isSubmitting}
           >

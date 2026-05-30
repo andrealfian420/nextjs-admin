@@ -31,11 +31,11 @@ export default function PageHeader({
     <div className='mb-4 space-y-1'>
       <div className='flex items-start justify-between gap-4'>
         <div>
-          <h1 className='text-xl font-semibold text-slate-800 dark:text-slate-100'>
+          <h1 className='text-xl font-semibold text-zinc-900 dark:text-zinc-100'>
             {title}
           </h1>
           {description && (
-            <p className='text-sm text-slate-500 dark:text-slate-400 mt-0.5'>
+            <p className='text-sm text-zinc-500 dark:text-zinc-400 mt-0.5'>
               {description}
             </p>
           )}
@@ -52,14 +52,14 @@ export default function PageHeader({
                 <React.Fragment key={index}>
                   <BreadcrumbItem>
                     {isLast ? (
-                      <BreadcrumbPage className='text-slate-600 dark:text-slate-400 text-sm'>
+                      <BreadcrumbPage className='text-zinc-600 dark:text-zinc-400 text-sm'>
                         {crumb.label}
                       </BreadcrumbPage>
                     ) : (
                       <BreadcrumbLink asChild>
                         <Link
                           href={crumb.href!}
-                          className='text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 text-sm transition-colors'
+                          className='text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-sm transition-colors'
                         >
                           {crumb.label}
                         </Link>
@@ -67,7 +67,7 @@ export default function PageHeader({
                     )}
                   </BreadcrumbItem>
                   {!isLast && (
-                    <BreadcrumbSeparator className='text-slate-300 dark:text-slate-600' />
+                    <BreadcrumbSeparator className='text-zinc-300 dark:text-zinc-600' />
                   )}
                 </React.Fragment>
               );

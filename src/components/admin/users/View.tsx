@@ -39,7 +39,7 @@ function SortHeader({
       className={`flex items-center gap-1 transition-colors ${
         isActive
           ? 'text-blue-600 dark:text-blue-400'
-          : 'hover:text-slate-700 dark:hover:text-slate-200'
+          : 'hover:text-zinc-700 dark:hover:text-zinc-200'
       }`}
     >
       {label}
@@ -48,7 +48,7 @@ function SortHeader({
       ) : sorted === 'desc' ? (
         <ArrowDown size={12} className='text-blue-600 dark:text-blue-400' />
       ) : (
-        <ArrowUpDown size={12} className='text-slate-400 dark:text-slate-600' />
+        <ArrowUpDown size={12} className='text-zinc-400 dark:text-zinc-600' />
       )}
     </button>
   );
@@ -59,7 +59,7 @@ function PageActions() {
     <Can permission='module.master-data.user.create'>
       <Link
         href='/admin/users/create'
-        className='inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-slate-700 text-white text-sm font-medium shadow-sm hover:bg-slate-800 transition-colors'
+        className='inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-zinc-900 text-white text-sm font-medium shadow-sm hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 transition-colors'
       >
         <Plus size={14} />
         Add User
@@ -84,7 +84,7 @@ function RowActions({
               <Pencil size={14} />
             </Link>
           </TooltipTrigger>
-          <TooltipContent className='[&_svg]:hidden! bg-slate-700 text-white hover:text-slate-200'>
+          <TooltipContent className='[&_svg]:hidden! bg-zinc-700 text-white hover:text-zinc-200'>
             Edit
           </TooltipContent>
         </Tooltip>
@@ -101,7 +101,7 @@ function RowActions({
               <Trash2 size={14} />
             </Link>
           </TooltipTrigger>
-          <TooltipContent className='[&_svg]:hidden! bg-slate-700 text-white'>
+          <TooltipContent className='[&_svg]:hidden! bg-zinc-700 text-white'>
             Delete
           </TooltipContent>
         </Tooltip>
@@ -150,7 +150,7 @@ export default function ViewUsers() {
   };
 
   return (
-    <div className='bg-white dark:bg-slate-800 rounded-lg p-4'>
+    <div className='bg-white dark:bg-zinc-800 rounded-lg p-4'>
       <DataTable
         columns={tableColumns}
         fetchData={userService.getUsers}

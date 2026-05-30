@@ -33,15 +33,15 @@ export default function SidebarProfile({
     return (
       <UserIcon
         size={16}
-        className='text-slate-600 dark:text-slate-300 cursor-pointer'
+        className='text-zinc-600 dark:text-zinc-300 cursor-pointer'
       />
     );
   };
 
   return (
-    <div className='h-14 flex items-center px-6 flex-shrink-0 border-t border-slate-200 dark:border-slate-700'>
+    <div className='h-14 flex items-center px-6 flex-shrink-0 border-t border-zinc-200 dark:border-zinc-800'>
       <div className='flex items-center gap-3'>
-        <div className='h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center'>
+        <div className='h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center'>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               {profilePicture()}
@@ -50,12 +50,12 @@ export default function SidebarProfile({
             <DropdownMenuContent className='mb-4 p-0 min-w-[180px]'>
               <DropdownMenuItem
                 asChild
-                className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'
+                className='w-full h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 p-2 rounded-md transition cursor-pointer'
               >
                 <Link href='/admin/profile'>Profile</Link>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className='w-full h-full hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 p-2 rounded-md transition cursor-pointer'
+                className='w-full h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 p-2 rounded-md transition cursor-pointer'
                 onClick={handleLogout}
               >
                 Logout
@@ -65,10 +65,10 @@ export default function SidebarProfile({
         </div>
 
         <div className='flex flex-col'>
-          <span className='text-sm font-medium text-slate-700 dark:text-slate-200'>
+          <span className='text-sm font-medium text-zinc-700 dark:text-zinc-200'>
             {user?.name || 'Loading...'}
           </span>
-          <span className='text-xs font-medium text-slate-500 dark:text-slate-400'>
+          <span className='text-xs font-medium text-zinc-500 dark:text-zinc-400'>
             {user?.role?.title || 'Loading...'}
           </span>
         </div>

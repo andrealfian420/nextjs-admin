@@ -43,14 +43,14 @@ export default function DataTablePagination({
     [
       'inline-flex items-center justify-center rounded-lg border h-8 px-2.5 text-sm font-medium transition-colors select-none',
       link.url
-        ? 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-100 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200 cursor-pointer'
-        : 'border-slate-200 bg-white text-slate-300 cursor-default dark:border-slate-700 dark:bg-slate-800 dark:text-slate-600',
+        ? 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-200 cursor-pointer'
+        : 'border-zinc-200 bg-white text-zinc-300 cursor-default dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-600',
     ].join(' ');
 
   return (
     <div className='flex items-center justify-between gap-3 mt-2'>
       {/* Per-page selector */}
-      <div className='flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400'>
+      <div className='flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400'>
         <span className='whitespace-nowrap hidden sm:inline'>
           Rows per page
         </span>
@@ -64,7 +64,7 @@ export default function DataTablePagination({
           <SelectContent
             position='popper'
             side='top'
-            className='bg-white border border-slate-200 dark:border-slate-700 shadow-md'
+            className='bg-white border border-zinc-200 dark:border-zinc-700 shadow-md'
           >
             {LIMIT_OPTIONS.map((opt) => (
               <SelectItem
@@ -92,7 +92,7 @@ export default function DataTablePagination({
           ‹
         </button>
         {currentPage && totalPages && (
-          <span className='text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap'>
+          <span className='text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap'>
             {currentPage} / {totalPages}
           </span>
         )}
@@ -120,8 +120,8 @@ export default function DataTablePagination({
           className={[
             'inline-flex items-center justify-center rounded-lg border h-8 px-2.5 text-sm font-medium transition-colors select-none cursor-pointer',
             prevLink.url
-              ? 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-100 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200'
-              : 'border-slate-200 bg-white text-slate-300 cursor-default dark:border-slate-700 dark:bg-slate-800 dark:text-slate-600',
+              ? 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-200'
+              : 'border-zinc-200 bg-white text-zinc-300 cursor-default dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-600',
           ].join(' ')}
         >
           ‹
@@ -133,7 +133,7 @@ export default function DataTablePagination({
             return (
               <span
                 key={`ellipsis-${i}`}
-                className='inline-flex items-center justify-center h-8 min-w-8 px-1 text-sm text-slate-400 dark:text-slate-500 select-none'
+                className='inline-flex items-center justify-center h-8 min-w-8 px-1 text-sm text-zinc-400 dark:text-zinc-500 select-none'
               >
                 …
               </span>
@@ -147,8 +147,8 @@ export default function DataTablePagination({
               className={[
                 'inline-flex items-center justify-center rounded-lg border h-8 min-w-8 px-2 text-sm font-medium transition-colors select-none cursor-pointer',
                 isActive
-                  ? 'border-slate-700 bg-slate-700 text-white shadow-sm'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-100 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200',
+                  ? 'border-zinc-700 bg-zinc-700 text-white shadow-sm'
+                  : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-200',
               ].join(' ')}
             >
               {item}
@@ -166,8 +166,8 @@ export default function DataTablePagination({
           className={[
             'inline-flex items-center justify-center rounded-lg border h-8 px-2.5 text-sm font-medium transition-colors select-none cursor-pointer',
             nextLink.url
-              ? 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-100 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200'
-              : 'border-slate-200 bg-white text-slate-300 cursor-default dark:border-slate-700 dark:bg-slate-800 dark:text-slate-600',
+              ? 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-200'
+              : 'border-zinc-200 bg-white text-zinc-300 cursor-default dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-600',
           ].join(' ')}
         >
           ›

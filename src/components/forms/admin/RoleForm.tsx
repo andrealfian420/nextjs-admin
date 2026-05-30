@@ -247,7 +247,7 @@ export default function RoleForm({ isEdit = false }) {
   };
 
   return (
-    <div className='bg-white dark:bg-slate-800 p-4 rounded-lg'>
+    <div className='bg-white dark:bg-zinc-800 p-4 rounded-lg'>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           <div className='space-y-1.5'>
@@ -329,7 +329,7 @@ export default function RoleForm({ isEdit = false }) {
                 type='button'
                 variant='outline'
                 size='sm'
-                className='mb-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700'
+                className='mb-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700'
                 onClick={handleToggleAll}
               >
                 {accessBtnLabel}
@@ -365,10 +365,10 @@ export default function RoleForm({ isEdit = false }) {
                     return (
                       <div
                         key={module.module}
-                        className={`border border-slate-200 dark:border-slate-700 rounded-lg overflow- ${index !== 0 ? 'mt-5' : ''}`}
+                        className={`border border-zinc-200 dark:border-zinc-700 rounded-lg overflow- ${index !== 0 ? 'mt-5' : ''}`}
                       >
                         {/* Module header */}
-                        <div className='flex items-center gap-2.5 px-4 py-2.5 bg-slate-100 dark:bg-slate-700'>
+                        <div className='flex items-center gap-2.5 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-700'>
                           <Checkbox
                             id={`module-${module.module}`}
                             checked={isModuleAll}
@@ -410,7 +410,7 @@ export default function RoleForm({ isEdit = false }) {
                             return (
                               <div
                                 key={sub.module}
-                                className='bg-white dark:bg-slate-800 p-3 space-y-2 '
+                                className='bg-white dark:bg-zinc-800 p-3 space-y-2 '
                               >
                                 {/* Sub-module header */}
                                 <div className='flex items-center gap-2'>
@@ -435,7 +435,7 @@ export default function RoleForm({ isEdit = false }) {
                                   />
                                   <Label
                                     htmlFor={`sub-${sub.module}`}
-                                    className='text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 cursor-pointer select-none'
+                                    className='text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 cursor-pointer select-none'
                                   >
                                     {sub.module}
                                   </Label>
@@ -478,7 +478,7 @@ export default function RoleForm({ isEdit = false }) {
 
         <div className='col-span-1 flex items-center justify-end gap-2 pt-2 mt-5'>
           <Button
-            className='bg-slate-700 hover:bg-slate-800 text-white cursor-pointer'
+            className='bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 cursor-pointer'
             type='submit'
             disabled={isSubmitting}
           >

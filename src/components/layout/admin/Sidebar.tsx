@@ -74,14 +74,14 @@ export default function Sidebar() {
       />
 
       <aside
-        className={`fixed lg:static top-0 left-0 h-full lg:h-auto z-50 lg:z-auto flex flex-col flex-shrink-0 bg-white dark:bg-slate-800 shadow-[2px_0_12px_0_rgba(0,0,0,0.06)] overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`fixed lg:static top-0 left-0 h-full lg:h-auto z-50 lg:z-auto flex flex-col flex-shrink-0 bg-white dark:bg-zinc-900 shadow-[2px_0_12px_0_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-300 ease-in-out ${
           isOpen
             ? 'w-64 translate-x-0'
             : 'w-64 -translate-x-full lg:w-0 lg:translate-x-0'
         }`}
       >
         <div className='h-14 flex items-center px-6 flex-shrink-0'>
-          <h1 className='font-semibold text-lg tracking-tight whitespace-nowrap text-slate-800 dark:text-slate-100'>
+          <h1 className='font-semibold text-lg tracking-tight whitespace-nowrap text-zinc-900 dark:text-zinc-100'>
             Admin Panel
           </h1>
         </div>
@@ -92,7 +92,7 @@ export default function Sidebar() {
               return (
                 <div
                   key={`separator-${index}`}
-                  className='border-t border-slate-200 dark:border-slate-700 my-2'
+                  className='border-t border-zinc-200 dark:border-zinc-800 my-2'
                 />
               );
             }

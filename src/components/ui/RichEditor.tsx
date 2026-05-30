@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import * as React from 'react';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
@@ -85,11 +85,11 @@ function ToolbarButton({
           aria-pressed={active}
           className={cn(
             'flex size-7 items-center justify-center rounded transition-colors',
-            'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-            'dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100',
+            'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900',
+            'dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100',
             'disabled:pointer-events-none disabled:opacity-40',
             active &&
-              'bg-slate-200 text-slate-900 dark:bg-slate-600 dark:text-slate-100',
+              'bg-zinc-200 text-zinc-900 dark:bg-zinc-600 dark:text-zinc-100',
           )}
         >
           {children}
@@ -122,8 +122,8 @@ function ColorButton({ editor }: { editor: Editor }) {
           aria-label='Text Color'
           className={cn(
             'flex size-7 flex-col items-center justify-center gap-0.5 rounded transition-colors',
-            'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-            'dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100',
+            'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900',
+            'dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100',
           )}
         >
           <PaletteIcon className='size-3.5' />
@@ -153,7 +153,7 @@ function ColorButton({ editor }: { editor: Editor }) {
 
 function ToolbarSeparator() {
   return (
-    <div className='mx-0.5 h-5 w-px shrink-0 bg-slate-200 dark:bg-slate-700' />
+    <div className='mx-0.5 h-5 w-px shrink-0 bg-zinc-200 dark:bg-zinc-700' />
   );
 }
 
@@ -182,8 +182,8 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
     <TooltipProvider delayDuration={600}>
       <div
         className={cn(
-          'flex flex-wrap items-center gap-0.5 border-b border-input bg-slate-50 px-2 py-1.5',
-          'dark:bg-slate-800/60 dark:border-slate-700',
+          'flex flex-wrap items-center gap-0.5 border-b border-input bg-zinc-50 px-2 py-1.5',
+          'dark:bg-zinc-800/60 dark:border-zinc-700',
         )}
       >
         {/* History */}
@@ -418,16 +418,16 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
 /* ------------------------------------------------------------------ */
 
 /**
- * RichEditor â€” TipTap-powered WYSIWYG editor styled to match the design system.
+ * RichEditor — TipTap-powered WYSIWYG editor styled to match the design system.
  *
  * Props:
- *   value          {string}   â€” HTML string (controlled)
- *   onChange       {Function} â€” called with new HTML string on every change
- *   placeholder    {string}   â€” placeholder text shown when editor is empty
- *   minHeight      {string}   â€” min-height CSS value for the editable area (default '160px')
+ *   value          {string}   — HTML string (controlled)
+ *   onChange       {Function} — called with new HTML string on every change
+ *   placeholder    {string}   — placeholder text shown when editor is empty
+ *   minHeight      {string}   — min-height CSS value for the editable area (default '160px')
  *   disabled       {boolean}
- *   aria-invalid   {boolean}  â€” shows destructive ring when true
- *   className      {string}   â€” applied to the outer wrapper
+ *   aria-invalid   {boolean}  — shows destructive ring when true
+ *   className      {string}   — applied to the outer wrapper
  *
  * Usage with react-hook-form:
  *   <Controller
@@ -438,7 +438,7 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
  *         value={field.value}
  *         onChange={field.onChange}
  *         aria-invalid={!!errors.bio}
- *         placeholder='Write somethingâ€¦'
+ *         placeholder='Write something…'
  *       />
  *     )}
  *   />
@@ -457,7 +457,7 @@ function RichEditor({
   className,
   value,
   onChange,
-  placeholder = 'Start typing…',
+  placeholder = 'Start typing�',
   minHeight = '160px',
   disabled = false,
   'aria-invalid': ariaInvalid,
@@ -565,16 +565,16 @@ function RichEditor({
           '[&_.tiptap_li[data-type=taskItem]_input[type=checkbox]]:mt-0.5 [&_.tiptap_li[data-type=taskItem]_input[type=checkbox]]:cursor-pointer',
 
           // Blockquote
-          '[&_.tiptap_blockquote]:border-l-2 [&_.tiptap_blockquote]:border-slate-300 [&_.tiptap_blockquote]:pl-3 [&_.tiptap_blockquote]:italic [&_.tiptap_blockquote]:text-muted-foreground [&_.tiptap_blockquote]:mb-1.5',
-          'dark:[&_.tiptap_blockquote]:border-slate-600',
+          '[&_.tiptap_blockquote]:border-l-2 [&_.tiptap_blockquote]:border-zinc-300 [&_.tiptap_blockquote]:pl-3 [&_.tiptap_blockquote]:italic [&_.tiptap_blockquote]:text-muted-foreground [&_.tiptap_blockquote]:mb-1.5',
+          'dark:[&_.tiptap_blockquote]:border-zinc-600',
 
           // Inline code
-          '[&_.tiptap_code]:rounded [&_.tiptap_code]:bg-slate-100 [&_.tiptap_code]:px-1 [&_.tiptap_code]:py-0.5 [&_.tiptap_code]:font-mono [&_.tiptap_code]:text-xs',
-          'dark:[&_.tiptap_code]:bg-slate-700 dark:[&_.tiptap_code]:text-slate-200',
+          '[&_.tiptap_code]:rounded [&_.tiptap_code]:bg-zinc-100 [&_.tiptap_code]:px-1 [&_.tiptap_code]:py-0.5 [&_.tiptap_code]:font-mono [&_.tiptap_code]:text-xs',
+          'dark:[&_.tiptap_code]:bg-zinc-700 dark:[&_.tiptap_code]:text-zinc-200',
 
           // Code block
-          '[&_.tiptap_pre]:rounded-md [&_.tiptap_pre]:bg-slate-900 [&_.tiptap_pre]:p-3 [&_.tiptap_pre]:mb-2 [&_.tiptap_pre]:overflow-x-auto',
-          '[&_.tiptap_pre_code]:bg-transparent [&_.tiptap_pre_code]:text-slate-100 [&_.tiptap_pre_code]:text-xs [&_.tiptap_pre_code]:p-0',
+          '[&_.tiptap_pre]:rounded-md [&_.tiptap_pre]:bg-zinc-900 [&_.tiptap_pre]:p-3 [&_.tiptap_pre]:mb-2 [&_.tiptap_pre]:overflow-x-auto',
+          '[&_.tiptap_pre_code]:bg-transparent [&_.tiptap_pre_code]:text-zinc-100 [&_.tiptap_pre_code]:text-xs [&_.tiptap_pre_code]:p-0',
 
           // HR
           '[&_.tiptap_hr]:my-3 [&_.tiptap_hr]:border-border',

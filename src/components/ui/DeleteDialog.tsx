@@ -88,14 +88,14 @@ export default function DeleteDialog({
           </div>
 
           <DialogHeader className='mb-4'>
-            <DialogTitle className='text-base font-semibold text-slate-800 dark:text-slate-100'>
+            <DialogTitle className='text-base font-semibold text-zinc-800 dark:text-zinc-100'>
               {title}
             </DialogTitle>
-            <DialogDescription className='mt-1.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400'>
+            <DialogDescription className='mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
               {description ?? (
                 <>
                   Are you sure you want to delete{' '}
-                  <span className='font-medium text-slate-700 dark:text-slate-300'>
+                  <span className='font-medium text-zinc-700 dark:text-zinc-300'>
                     {
                       (displayRow?.name ??
                         displayRow?.title ??

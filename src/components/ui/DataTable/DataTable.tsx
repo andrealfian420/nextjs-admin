@@ -20,9 +20,7 @@ import type { FetchParams, PaginationLink } from '@/types';
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];
-  fetchData: (
-    params?: FetchParams,
-  ) => Promise<{
+  fetchData: (params?: FetchParams) => Promise<{
     data: {
       data: TData[];
       links: PaginationLink[];
@@ -60,7 +58,7 @@ export default function DataTable<TData>({
             id: '_no',
             header: '#',
             cell: ({ row }: { row: Row<TData> }) => (
-              <span className='text-slate-400 dark:text-slate-500 font-medium'>
+              <span className='text-zinc-400 dark:text-zinc-500 font-medium'>
                 {(page - 1) * limit + row.index + 1}
               </span>
             ),
@@ -135,7 +133,7 @@ export default function DataTable<TData>({
         <DataTableSearch onSearch={handleSearch} />
         <div className='flex items-center gap-2 shrink-0'>
           <Button
-            className='cursor-pointer bg-slate-700 text-white hover:bg-slate-800'
+            className='cursor-pointer bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
             size='icon-sm'
             onClick={loadData}
           >
@@ -145,16 +143,16 @@ export default function DataTable<TData>({
         </div>
       </div>
 
-      <div className='rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden bg-white dark:bg-slate-800'>
+      <div className='rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden bg-white dark:bg-zinc-800'>
         <div className='overflow-x-auto'>
           <table className='w-full text-sm'>
             <thead>
-              <tr className='border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40'>
+              <tr className='border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-700/40'>
                 {table.getHeaderGroups().map((headerGroup) =>
                   headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className='text-left px-5 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap'
+                      className='text-left px-5 py-3.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider whitespace-nowrap'
                     >
                       {flexRender(
                         header.column.columnDef.header,
@@ -166,13 +164,13 @@ export default function DataTable<TData>({
               </tr>
             </thead>
 
-            <tbody className='divide-y divide-slate-100 dark:divide-slate-700'>
+            <tbody className='divide-y divide-zinc-100 dark:divide-zinc-700'>
               {loading &&
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className='animate-pulse'>
                     {tableColumns.map((_, j) => (
                       <td key={j} className='px-5 py-4'>
-                        <div className='h-4 bg-slate-100 dark:bg-slate-700 rounded-md w-3/4' />
+                        <div className='h-4 bg-zinc-100 dark:bg-zinc-700 rounded-md w-3/4' />
                       </td>
                     ))}
                   </tr>
@@ -181,10 +179,10 @@ export default function DataTable<TData>({
               {!loading && data.length === 0 && (
                 <tr>
                   <td colSpan={columns.length + 2}>
-                    <div className='flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500'>
+                    <div className='flex flex-col items-center justify-center py-16 text-zinc-400 dark:text-zinc-500'>
                       <svg
                         xmlns='http://www.w3.org/2000/svg'
-                        className='size-10 mb-3 text-slate-300 dark:text-slate-600'
+                        className='size-10 mb-3 text-zinc-300 dark:text-zinc-600'
                         fill='none'
                         viewBox='0 0 24 24'
                         stroke='currentColor'
@@ -197,7 +195,7 @@ export default function DataTable<TData>({
                         />
                       </svg>
                       <p className='text-sm font-medium'>No data found</p>
-                      <p className='text-xs mt-1 text-slate-300 dark:text-slate-500'>
+                      <p className='text-xs mt-1 text-zinc-300 dark:text-zinc-500'>
                         Try adjusting your search query
                       </p>
                     </div>
@@ -209,16 +207,16 @@ export default function DataTable<TData>({
                 table.getRowModel().rows.map((row, rowIndex) => (
                   <tr
                     key={row.id}
-                    className={`transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40 ${
+                    className={`transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700/40 ${
                       rowIndex % 2 === 0
-                        ? 'bg-white dark:bg-slate-800'
-                        : 'bg-slate-50/50 dark:bg-slate-700/20'
+                        ? 'bg-white dark:bg-zinc-800'
+                        : 'bg-zinc-50/50 dark:bg-zinc-700/20'
                     }`}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className='px-5 py-3.5 text-slate-700 dark:text-slate-300'
+                        className='px-5 py-3.5 text-zinc-700 dark:text-zinc-300'
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
