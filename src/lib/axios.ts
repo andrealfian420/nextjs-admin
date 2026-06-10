@@ -1,6 +1,7 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
-import { fetchUser, forceLogout } from './auth';
+import { fetchUser } from './auth';
+import { forceLogout } from './force-logout';
 
 const api = axios.create({
   baseURL: '/api',
