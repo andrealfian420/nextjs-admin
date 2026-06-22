@@ -48,6 +48,42 @@ npm run dev
 
 The app will be available at `http://localhost:3000`.
 
+## Docker (Optional)
+
+> Docker is not required to run this project. You can use the standard Node.js setup described above. Docker is provided as an alternative for containerized development and production deployment.
+
+### Prerequisites
+
+- Docker & Docker Compose installed
+- Backend API stack running (its Docker network must exist)
+
+### Quick Start
+
+```bash
+cp .env.example .env
+# Edit .env — set API_URL to your backend container name
+# Example: API_URL=http://express-core-api:3001/api/v1
+
+make dev    # Development with hot-reload
+make prod   # Production-like (standalone build)
+```
+
+App will be available at `http://127.0.0.1:3000`.
+
+### Makefile Commands
+
+| Command      | Description                                     |
+| ------------ | ----------------------------------------------- |
+| `make dev`   | Start development mode (hot-reload via volume)  |
+| `make prod`  | Start production-like mode (standalone build)   |
+| `make build` | Build Docker image only                         |
+| `make logs`  | Tail container logs                             |
+| `make down`  | Stop & remove containers                        |
+| `make clean` | Stop, remove containers + volumes (fresh start) |
+| `make shell` | Shell into app container                        |
+
+> For full Docker documentation, architecture details, troubleshooting, and boilerplate implementation guide, see [DOCKER_IMPLEMENTATION.md](DOCKER_IMPLEMENTATION.md).
+
 ## Scripts
 
 | Command         | Description              |
