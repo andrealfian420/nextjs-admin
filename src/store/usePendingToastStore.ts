@@ -9,7 +9,7 @@ interface PendingToastState {
 }
 
 // This store persists a single pending toast to sessionStorage so it survives
-// full page reloads (e.g., after window.location.href redirect during forceLogout).
+// full page reloads (e.g., the reload to /login after forceLogout).
 // sessionStorage is used intentionally — data is scoped to the tab and auto-cleared
 // when the tab is closed.
 export const usePendingToastStore = create<PendingToastState>()(

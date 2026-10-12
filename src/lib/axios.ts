@@ -1,33 +1,27 @@
-import axios, { type InternalAxiosRequestConfig } from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
-import { fetchUser } from './auth';
 import { forceLogout } from './force-logout';
+import {
+  isTransientError,
+  refreshAccessToken,
+  SessionEndedError,
+} from './refresh-token';
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Reject a 401 as is, without refreshing the session. */
+    skipAuthRefresh?: boolean;
+    /** Set once a request was retried after a refresh; a second 401 is final. */
+    _retry?: boolean;
+  }
+}
 
 const api = axios.create({
   baseURL: '/api',
   withCredentials: true,
 });
 
-let isRefreshing = false;
-let failedQueue: {
-  resolve: (token: string | null) => void;
-  reject: (error: unknown) => void;
-}[] = [];
-
-// Process the queue of failed requests after token refresh
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-
-  failedQueue = [];
-};
-
-// Request interceptor to add auth token
+// Attach the in-memory access token.
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
 
@@ -38,55 +32,40 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor to handle token refresh
+// On 401: refresh once (shared with every concurrent caller), then retry the request once.
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
+    const config = isAxiosError(error) ? error.config : undefined;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const response = await axios.post('/api/auth/refresh');
-
-        const newToken = response.data.data.accessToken;
-
-        useAuthStore.getState().setAccessToken(newToken);
-
-        await fetchUser(newToken);
-
-        processQueue(null, newToken);
-
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
-        return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-
-        await forceLogout();
-
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+    if (
+      !config ||
+      error.response?.status !== 401 ||
+      config.skipAuthRefresh ||
+      config._retry
+    ) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    config._retry = true;
+
+    let token: string;
+    try {
+      token = await refreshAccessToken();
+    } catch (refreshError) {
+      // A rejected session ends here. An unreachable backend or a logout that already
+      // happened leaves the session alone; the caller just sees the failure.
+      if (
+        !isTransientError(refreshError) &&
+        !(refreshError instanceof SessionEndedError)
+      ) {
+        await forceLogout();
+      }
+      return Promise.reject(refreshError);
+    }
+
+    config.headers.Authorization = `Bearer ${token}`;
+    return api(config);
   },
 );
 

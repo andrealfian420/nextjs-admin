@@ -1,42 +1,43 @@
-import type { MenuItem, User } from '@/types';
+import type { MenuItem } from '@/types/ui';
+import type { UserProfile } from '@/types/user';
+
+// UI-side permission checks against the signed-in user's `role.access`. They decide what to
+// show; the backend still authorizes every API call.
 
 export function hasAccess(
-  user: User | null,
+  user: UserProfile | null | undefined,
   permission: string | string[],
 ): boolean {
-  if (!user?.role?.access) {
+  const access = user?.role?.access;
+
+  if (!Array.isArray(access)) {
     return false;
   }
 
   if (Array.isArray(permission)) {
-    return permission.some((p) => user.role!.access.includes(p));
+    return permission.some((p) => access.includes(p));
   }
 
-  return user.role.access.includes(permission);
+  return access.includes(permission);
 }
 
+// Items without `access` are visible to every signed-in user; a parent is dropped when none
+// of its children is visible.
 export function filterMenuByAccess(
   menu: MenuItem[],
-  user: User | null,
+  user: UserProfile | null | undefined,
 ): MenuItem[] {
-  return menu
-    .map((item) => {
-      if (item.separator) return item;
+  const visible = (item: MenuItem) =>
+    !item.access || hasAccess(user, item.access);
 
-      if (item.children) {
-        const filteredChildren = item.children.filter((child) => {
-          return hasAccess(user, child.access as string | string[]);
-        });
+  return menu.flatMap((item) => {
+    if (item.separator) return [item];
 
-        if (filteredChildren.length === 0) return null;
-        return { ...item, children: filteredChildren };
-      }
+    if (item.children) {
+      const children = item.children.filter(visible);
+      return children.length > 0 ? [{ ...item, children }] : [];
+    }
 
-      if (!item.access || hasAccess(user, item.access)) {
-        return item;
-      }
-
-      return null;
-    })
-    .filter(Boolean) as MenuItem[];
+    return visible(item) ? [item] : [];
+  });
 }

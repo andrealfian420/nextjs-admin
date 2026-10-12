@@ -99,7 +99,7 @@ export default function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className='w-full h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 p-2 rounded-md transition cursor-pointer'
-                  onClick={handleLogout}
+                  onClick={() => handleLogout()}
                 >
                   Logout
                 </DropdownMenuItem>

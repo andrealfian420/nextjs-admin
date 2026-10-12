@@ -27,7 +27,7 @@ export default function PermissionGuard({
     if (!hasAccess(user, permission)) {
       router.replace(fallback);
     }
-  }, [user, permission]);
+  }, [user, permission, fallback, router]);
 
   if (!user) {
     return (

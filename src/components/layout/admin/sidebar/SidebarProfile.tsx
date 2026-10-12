@@ -57,7 +57,7 @@ export default function SidebarProfile({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className='w-full h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 p-2 rounded-md transition cursor-pointer'
-                  onClick={handleLogout}
+                  onClick={() => handleLogout()}
                 >
                   Logout
                 </DropdownMenuItem>
@@ -76,7 +76,7 @@ export default function SidebarProfile({
         </div>
 
         <button
-          onClick={handleLogout}
+          onClick={() => handleLogout()}
           title='Logout'
           className='p-2 rounded-lg text-zinc-500 hover:text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer'
         >

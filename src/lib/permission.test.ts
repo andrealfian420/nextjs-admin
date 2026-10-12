@@ -30,6 +30,7 @@ describe('hasAccess', () => {
     expect(hasAccess(null, USER_INDEX)).toBe(false);
     expect(hasAccess({} as User, USER_INDEX)).toBe(false);
     expect(hasAccess({ role: null } as unknown as User, USER_INDEX)).toBe(false);
+    expect(hasAccess({ role: { access: 'oops' } } as unknown as User, USER_INDEX)).toBe(false);
   });
 });
 
@@ -66,6 +67,14 @@ describe('filterMenuByAccess', () => {
     const result = filterMenuByAccess(menu, userWith([ROLE_INDEX]));
     const parent = result.find((item) => item.name === 'Master Data');
     expect(parent?.children?.map((child) => child.name)).toEqual(['Roles']);
+  });
+
+  it('keeps a child that declares no access requirement', () => {
+    const result = filterMenuByAccess(
+      [{ name: 'Group', key: 'g', children: [{ name: 'Open', key: 'o', href: '/admin/open' }] }],
+      userWith([]),
+    );
+    expect(result[0]?.children?.map((child) => child.name)).toEqual(['Open']);
   });
 
   it('hides restricted items from an anonymous visitor', () => {

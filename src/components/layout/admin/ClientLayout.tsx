@@ -2,6 +2,7 @@
 
 import Sidebar from '@/components/layout/admin/Sidebar';
 import Navbar from '@/components/layout/admin/Navbar';
+import AdminAccessGuard from '@/components/layout/admin/AdminAccessGuard';
 import { useEffect } from 'react';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { TooltipProvider } from '@/components/ui/Tooltip';
@@ -23,18 +24,20 @@ export default function ClientLayout({
   }, [checkScreenSize]);
 
   return (
-    <TooltipProvider>
-      <div className='flex h-screen font-sans bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden'>
-        <Sidebar />
+    <AdminAccessGuard>
+      <TooltipProvider>
+        <div className='flex h-screen font-sans bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden'>
+          <Sidebar />
 
-        <div className='flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300'>
-          <Navbar />
+          <div className='flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300'>
+            <Navbar />
 
-          <main className='flex-1 overflow-y-auto p-6 sm:p-5 space-y-8'>
-            {children}
-          </main>
+            <main className='flex-1 overflow-y-auto p-6 sm:p-5 space-y-8'>
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
-    </TooltipProvider>
+      </TooltipProvider>
+    </AdminAccessGuard>
   );
 }
