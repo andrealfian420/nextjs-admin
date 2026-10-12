@@ -24,6 +24,7 @@
   },
   "include": [
     "next-env.d.ts",
+    "**/*.mts",
     "**/*.ts",
     "**/*.tsx",
     "**/*.js",
