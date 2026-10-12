@@ -1,49 +1,46 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { rejectForeignOrigin } from '@/lib/origin-guard';
+import {
+  backendUrl,
+  clientIp,
+  configError,
+  forwardSetCookies,
+  readJson,
+  serviceUnavailable,
+} from '@/lib/bff';
 
-const apiUrl = process.env.API_URL;
-
-// Forward Set-Cookie headers from the backend response, stripping the domain
-// attribute so cookies are bound to the Next.js app domain instead.
-function forwardSetCookies(backendRes: Response, nextRes: NextResponse) {
-  const cookies =
-    typeof backendRes.headers.getSetCookie === 'function'
-      ? backendRes.headers.getSetCookie()
-      : ([backendRes.headers.get('set-cookie')].filter(Boolean) as string[]);
-
-  cookies.forEach((cookie) => {
-    const cleaned = cookie.replace(/;\s*domain=[^;,]*/gi, '');
-    nextRes.headers.append('set-cookie', cleaned);
-  });
-}
-
+// Cookie proxy for login: forwards the credentials and rebinds the backend's refreshToken
+// cookie to this app's host.
 export async function POST(request: NextRequest) {
+  const rejected = rejectForeignOrigin(request);
+  if (rejected) return rejected;
+
+  const url = backendUrl('/auth/login');
+  if (!url) return configError();
+
+  let body: unknown;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ message: 'Invalid request body' }, { status: 400 });
+  }
 
-    const clientIp =
-      request.headers.get('x-forwarded-for') ??
-      request.headers.get('x-real-ip') ??
-      'unknown';
-
-    const res = await fetch(`${apiUrl}/auth/login`, {
+  try {
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Forwarded-For': clientIp,
+        'X-Forwarded-For': clientIp(request),
       },
       body: JSON.stringify(body),
     });
 
-    const data = await res.json();
-    const response = NextResponse.json(data, { status: res.status });
-    forwardSetCookies(res, response);
+    const response = NextResponse.json(await readJson(res), { status: res.status });
+    if (res.ok) forwardSetCookies(res, response);
 
     return response;
   } catch (err) {
     console.error('[/api/auth/login]', err);
-    return NextResponse.json(
-      { message: 'Auth service unavailable' },
-      { status: 503 },
-    );
+    return serviceUnavailable('Auth service unavailable');
   }
 }

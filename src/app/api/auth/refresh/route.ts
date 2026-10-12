@@ -1,48 +1,49 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { rejectForeignOrigin } from '@/lib/origin-guard';
+import {
+  backendUrl,
+  clientIp,
+  configError,
+  forwardSetCookies,
+  readJson,
+  refreshCookieHeader,
+  serviceUnavailable,
+} from '@/lib/bff';
 
-const apiUrl = process.env.API_URL;
-
-function forwardSetCookies(backendRes: Response, nextRes: NextResponse) {
-  const cookies =
-    typeof backendRes.headers.getSetCookie === 'function'
-      ? backendRes.headers.getSetCookie()
-      : ([backendRes.headers.get('set-cookie')].filter(Boolean) as string[]);
-
-  cookies.forEach((cookie) => {
-    const cleaned = cookie.replace(/;\s*domain=[^;,]*/gi, '');
-    nextRes.headers.append('set-cookie', cleaned);
-  });
-}
-
+// Cookie proxy for access-token refresh (rotating refresh token).
 export async function POST(request: NextRequest) {
+  const rejected = rejectForeignOrigin(request);
+  if (rejected) return rejected;
+
+  const url = backendUrl('/auth/refresh');
+  if (!url) return configError();
+
+  // Anonymous visitor: nothing to refresh, so skip the backend round trip.
+  const cookie = refreshCookieHeader(request);
+  if (!cookie) {
+    return NextResponse.json({ message: 'No active session' }, { status: 401 });
+  }
+
   try {
-    // Forward the browser's cookies (including refreshToken) to the backend
-    const cookieHeader = request.headers.get('cookie') ?? '';
-
-    const clientIp =
-      request.headers.get('x-forwarded-for') ??
-      request.headers.get('x-real-ip') ??
-      'unknown';
-
-    const res = await fetch(`${apiUrl}/auth/refresh`, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Cookie: cookieHeader,
-        'X-Forwarded-For': clientIp,
+        Cookie: cookie,
+        'X-Forwarded-For': clientIp(request),
       },
     });
 
-    const data = await res.json();
-    const response = NextResponse.json(data, { status: res.status });
-    forwardSetCookies(res, response);
+    const response = NextResponse.json(await readJson(res), { status: res.status });
+
+    // Only a successful refresh may touch the cookie. A failed one (e.g. a token another tab
+    // already rotated) can carry a clearing Set-Cookie that would delete a still-valid
+    // cookie; ending the session is logout's job.
+    if (res.ok) forwardSetCookies(res, response);
 
     return response;
   } catch (err) {
     console.error('[/api/auth/refresh]', err);
-    return NextResponse.json(
-      { message: 'Auth service unavailable' },
-      { status: 503 },
-    );
+    return serviceUnavailable('Auth service unavailable');
   }
 }

@@ -1,136 +1,93 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { backendUrl, clientIp, configError, serviceUnavailable } from '@/lib/bff';
 
-const API_URL = process.env.API_URL;
+// BFF catch-all: forwards Bearer-authenticated API calls to the backend. It never forwards
+// cookies in either direction — the refresh cookie only travels through /api/auth/*.
 
-// Allowed path prefixes to prevent open-proxy abuse
-const ALLOWED_PREFIXES = [
-  '/users',
-  '/roles',
-  '/activity-logs',
-  '/profile',
-  '/utils',
-  '/auth',
+// Backend modules the browser may reach. Add a prefix when a new module ships.
+const ALLOWED_PREFIXES = ['/users', '/roles', '/activity-logs', '/profile', '/utils'];
+
+// Anonymous auth endpoints, POST only. Cookie endpoints (login/refresh/logout) have their own
+// handlers; every other /auth path is not found.
+const PUBLIC_AUTH_PATHS = new Set([
+  '/auth/request-password-reset',
+  '/auth/reset-password',
+]);
+
+// Response headers passed back to the browser. Content-Length is left out: fetch decodes a
+// compressed body, so the backend's length no longer matches.
+const FORWARDED_RESPONSE_HEADERS = [
+  'content-type',
+  'content-disposition',
+  'cache-control',
+  'x-total-count',
+  'x-page',
+  'x-per-page',
+  'x-total-pages',
 ];
 
-function isAllowedPath(path: string): boolean {
+// Params arrive decoded, so a segment may hold '..' or an encoded '/' that would make the
+// backend URL resolve outside the allowlisted prefix.
+const isSafeSegment = (segment: string) =>
+  segment !== '' && segment !== '.' && segment !== '..' && !/[/\\]/.test(segment);
+
+function isAllowed(method: string, path: string): boolean {
+  if (PUBLIC_AUTH_PATHS.has(path)) return method === 'POST';
   return ALLOWED_PREFIXES.some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
 }
 
-function forwardSetCookies(backendRes: Response, nextRes: NextResponse) {
-  const cookies =
-    typeof backendRes.headers.getSetCookie === 'function'
-      ? backendRes.headers.getSetCookie()
-      : ([backendRes.headers.get('set-cookie')].filter(Boolean) as string[]);
-
-  cookies.forEach((cookie) => {
-    const cleaned = cookie.replace(/;\s*domain=[^;,]*/gi, '');
-    nextRes.headers.append('set-cookie', cleaned);
-  });
-}
+const notFound = () => NextResponse.json({ message: 'Not found' }, { status: 404 });
 
 async function handler(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
-  if (!API_URL) {
-    return NextResponse.json(
-      { message: 'Server configuration error' },
-      { status: 500 },
-    );
-  }
-
   const { path } = await params;
+  if (!path.every(isSafeSegment)) return notFound();
+
   const targetPath = `/${path.join('/')}`;
+  if (!isAllowed(request.method, targetPath)) return notFound();
 
-  if (!isAllowedPath(targetPath)) {
-    return NextResponse.json({ message: 'Not found' }, { status: 404 });
-  }
+  const base = backendUrl(`/${path.map(encodeURIComponent).join('/')}`);
+  if (!base) return configError();
 
-  // Build the full backend URL including query parameters
-  // API_URL may include a base path (e.g. http://host/api/v1), so we append rather than replace
-  const baseUrl = API_URL.replace(/\/+$/, '');
-  const url = new URL(`${baseUrl}${targetPath}`);
+  const url = new URL(base);
   url.search = request.nextUrl.search;
 
-  const clientIp =
-    request.headers.get('x-forwarded-for') ??
-    request.headers.get('x-real-ip') ??
-    'unknown';
-
-  // Build headers to forward
-  const headers: HeadersInit = {
-    'X-Forwarded-For': clientIp,
+  const headers: Record<string, string> = {
+    'X-Forwarded-For': clientIp(request),
   };
 
-  // Forward Authorization header
   const authHeader = request.headers.get('authorization');
-  if (authHeader) {
-    headers['Authorization'] = authHeader;
-  }
+  if (authHeader) headers.Authorization = authHeader;
 
-  // Forward cookies
-  const cookieHeader = request.headers.get('cookie');
-  if (cookieHeader) {
-    headers['Cookie'] = cookieHeader;
-  }
-
-  // Forward Content-Type only if present (let fetch set it for FormData/streams)
+  // Forwarded as-is so multipart keeps its boundary.
   const contentType = request.headers.get('content-type');
-  if (contentType) {
-    headers['Content-Type'] = contentType;
-  }
+  if (contentType) headers['Content-Type'] = contentType;
+
+  const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
 
   try {
-    const res = await fetch(url.toString(), {
+    const res = await fetch(url, {
       method: request.method,
       headers,
-      // Stream the body directly without buffering for all methods except GET/HEAD
-      body:
-        request.method !== 'GET' && request.method !== 'HEAD'
-          ? request.body
-          : undefined,
-      // @ts-expect-error -- Node.js fetch supports duplex for streaming request bodies
-      duplex: 'half',
-    });
+      body: hasBody ? request.body : undefined,
+      // Required by Node's fetch to stream a request body.
+      ...(hasBody && { duplex: 'half' }),
+    } as RequestInit);
 
-    // Stream the response back to the client without buffering
     const responseHeaders = new Headers();
+    for (const name of FORWARDED_RESPONSE_HEADERS) {
+      const value = res.headers.get(name);
+      if (value) responseHeaders.set(name, value);
+    }
 
-    // Forward relevant response headers
-    const headersToForward = [
-      'content-type',
-      'content-disposition',
-      'content-length',
-      'cache-control',
-      'x-total-count',
-      'x-page',
-      'x-per-page',
-      'x-total-pages',
-    ];
-
-    headersToForward.forEach((header) => {
-      const value = res.headers.get(header);
-      if (value) {
-        responseHeaders.set(header, value);
-      }
-    });
-
-    const response = new NextResponse(res.body, {
-      status: res.status,
-      headers: responseHeaders,
-    });
-
-    forwardSetCookies(res, response);
-
-    return response;
+    return new NextResponse(res.body, { status: res.status, headers: responseHeaders });
   } catch (err) {
     console.error(`[/api${targetPath}]`, err);
-    return NextResponse.json(
-      { message: 'Service unavailable' },
-      { status: 503 },
-    );
+    return serviceUnavailable();
   }
 }
 

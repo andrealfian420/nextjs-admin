@@ -1,57 +1,54 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { rejectForeignOrigin } from '@/lib/origin-guard';
+import {
+  backendUrl,
+  clearRefreshCookie,
+  configError,
+  readJson,
+  refreshCookieHeader,
+  serviceUnavailable,
+} from '@/lib/bff';
 
-const apiUrl = process.env.API_URL;
-
-function forwardSetCookies(backendRes: Response, nextRes: NextResponse) {
-  const cookies =
-    typeof backendRes.headers.getSetCookie === 'function'
-      ? backendRes.headers.getSetCookie()
-      : ([backendRes.headers.get('set-cookie')].filter(Boolean) as string[]);
-
-  cookies.forEach((cookie) => {
-    const cleaned = cookie.replace(/;\s*domain=[^;,]*/gi, '');
-    nextRes.headers.append('set-cookie', cleaned);
-  });
-}
-
+// POST: revoke the session on the backend, then clear the cookie. The cookie is cleared
+// even when the backend fails, so the browser never stays half logged in.
 export async function POST(request: NextRequest) {
-  try {
-    const cookieHeader = request.headers.get('cookie') ?? '';
+  const rejected = rejectForeignOrigin(request);
+  if (rejected) return rejected;
 
-    const res = await fetch(`${apiUrl}/auth/logout`, {
+  const cookie = refreshCookieHeader(request);
+  if (!cookie) {
+    return clearRefreshCookie(NextResponse.json({ message: 'Logged out' }));
+  }
+
+  const url = backendUrl('/auth/logout');
+  if (!url) return clearRefreshCookie(configError());
+
+  try {
+    const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: cookieHeader,
-      },
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
     });
 
-    let data = {};
-    try {
-      data = await res.json();
-    } catch {
-      // logout may not return JSON
+    // 401 means the backend no longer knows the token (e.g. revoked by a password change):
+    // the session is already over, which is what logout asked for.
+    if (res.status === 401) {
+      return clearRefreshCookie(NextResponse.json({ message: 'Logged out' }));
     }
 
-    const response = NextResponse.json(data, {
-      status: res.ok ? 200 : res.status,
-    });
-    forwardSetCookies(res, response);
-
-    // Ensure the cookie is cleared on the Next.js domain regardless of backend response
-    response.cookies.delete('refreshToken');
-
-    return response;
+    return clearRefreshCookie(
+      NextResponse.json(await readJson(res), { status: res.status }),
+    );
   } catch (err) {
     console.error('[/api/auth/logout]', err);
-
-    const response = NextResponse.json(
-      { message: 'Auth service unavailable' },
-      { status: 503 },
-    );
-
-    // Still clear the cookie even if backend is unreachable
-    response.cookies.delete('refreshToken');
-    return response;
+    return clearRefreshCookie(serviceUnavailable('Auth service unavailable'));
   }
+}
+
+// DELETE: clear the cookie only, without a backend call. Used when the backend already
+// ended every session (password change) or when a failed refresh leaves a dead cookie.
+export async function DELETE(request: NextRequest) {
+  const rejected = rejectForeignOrigin(request);
+  if (rejected) return rejected;
+
+  return clearRefreshCookie(NextResponse.json({ message: 'Session cleared' }));
 }
