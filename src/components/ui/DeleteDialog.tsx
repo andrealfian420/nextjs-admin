@@ -1,19 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { Dialog as DialogPrimitive } from 'radix-ui';
+import { useState } from 'react';
 import { Trash2Icon } from 'lucide-react';
-import {
-  Dialog,
-  DialogPortal,
-  DialogOverlay,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/Dialog';
-import { Button } from '@/components/ui/Button';
-import { cn } from '@/lib/utils';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 /**
  * Reusable delete confirmation dialog.
@@ -55,91 +44,32 @@ export default function DeleteDialog<T>({
   title = 'Delete Confirmation',
   description,
 }: DeleteDialogProps<T>) {
-  const [loading, setLoading] = useState(false);
-
-  // Retain last non-null row so content doesn't flash to "this item" during close
-  const displayRowRef = useRef(row);
-  if (row) displayRowRef.current = row;
-  const displayRow = displayRowRef.current;
-
-  const handleConfirm = async () => {
-    if (!displayRow) return;
-    setLoading(true);
-    try {
-      await onConfirm(displayRow);
-      onOpenChange(false);
-    } catch {
-      // Stay open so the user can retry or cancel; onConfirm reported the failure.
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Keep the last non-null row so the text doesn't flash to "this item" while closing.
+  const [displayRow, setDisplayRow] = useState(row);
+  if (row && row !== displayRow) setDisplayRow(row);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPortal>
-        <DialogOverlay className='bg-black/40 supports-backdrop-filter:backdrop-blur-sm duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0' />
-
-        <DialogPrimitive.Content
-          className={cn(
-            'fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2',
-            'rounded-2xl bg-white p-5 sm:p-6 text-sm shadow-xl outline-none ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10',
-            'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
-            'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
-          )}
-        >
-          {/* Icon */}
-          <div className='mb-4 flex size-12 items-center justify-center rounded-full bg-red-50 ring-8 ring-red-50/60 dark:bg-red-950/30 dark:ring-red-950/40'>
-            <Trash2Icon className='size-5 text-red-500' />
-          </div>
-
-          <DialogHeader className='mb-4'>
-            <DialogTitle className='text-base font-semibold text-zinc-800 dark:text-zinc-100'>
-              {title}
-            </DialogTitle>
-            <DialogDescription className='mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-              {description ?? (
-                <>
-                  Are you sure you want to delete{' '}
-                  <span className='font-medium text-zinc-700 dark:text-zinc-300'>
-                    {rowLabel(displayRow)}
-                  </span>
-                  ? This action{' '}
-                  <span className='font-medium text-red-500'>
-                    cannot be undone
-                  </span>
-                  .
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className='gap-2 sm:gap-2'>
-            <Button
-              variant='outline'
-              className='p-2.5 flex-1 cursor-pointer'
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button
-              className='p-2.5 flex-1 cursor-pointer bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500/40 dark:bg-red-600 dark:hover:bg-red-700'
-              onClick={handleConfirm}
-              disabled={loading || !displayRow}
-            >
-              {loading ? (
-                <>
-                  <span className='size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent' />
-                  Deleting…
-                </>
-              ) : (
-                'Delete'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogPrimitive.Content>
-      </DialogPortal>
-    </Dialog>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={() => (displayRow ? onConfirm(displayRow) : undefined)}
+      confirmDisabled={!displayRow}
+      title={title}
+      icon={<Trash2Icon className='size-5 text-red-500' />}
+      confirmLabel='Delete'
+      loadingLabel='Deleting…'
+      description={
+        description ?? (
+          <>
+            Are you sure you want to delete{' '}
+            <span className='font-medium text-zinc-700 dark:text-zinc-300'>
+              {rowLabel(displayRow)}
+            </span>
+            ? This action{' '}
+            <span className='font-medium text-red-500'>cannot be undone</span>.
+          </>
+        )
+      }
+    />
   );
 }
