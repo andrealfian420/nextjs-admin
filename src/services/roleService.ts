@@ -1,49 +1,43 @@
 import api from '@/lib/axios';
-import type { FetchParams } from '@/types';
+import { toListParams } from './listParams';
+import type { ApiResponse, PaginatedResponse, PaginationParams } from '@/types/api';
+import type { PermissionModule, Role, RoleInput, RoleRow } from '@/types/role';
 
-// Role service for handling role-related API requests
+// Role service. Permissions travel as `access: string[]`.
 export const roleService = {
-  async getRoles({
-    page = 1,
-    per_page = 10,
-    search = '',
-    sort_by,
-    sort_dir,
-  }: FetchParams = {}) {
-    const params: Record<string, string | number> = { page, per_page };
-
-    if (search) params.search = search;
-    if (sort_by) {
-      params.sort_by = sort_by;
-      params.sort_dir = sort_dir ?? 'asc';
-    }
-
-    const res = await api.get(`/roles`, { params });
+  async getRoles(params?: PaginationParams): Promise<PaginatedResponse<RoleRow>> {
+    const res = await api.get('/roles', { params: toListParams(params) });
     return res.data;
   },
 
-  async getRole(roleId: string) {
-    const res = await api.get(`/roles/${encodeURIComponent(roleId)}`);
+  async getRole(slug: string): Promise<ApiResponse<Role>> {
+    const res = await api.get(`/roles/${encodeURIComponent(slug)}`);
     return res.data;
   },
 
-  async createRole(roleData: Record<string, unknown>) {
-    const res = await api.post('/roles', roleData);
+  async createRole(data: RoleInput): Promise<ApiResponse<Role>> {
+    const res = await api.post('/roles', data);
     return res.data;
   },
 
-  async updateRole(roleId: string, roleData: Record<string, unknown>) {
-    const res = await api.put(`/roles/${encodeURIComponent(roleId)}`, roleData);
+  async updateRole(slug: string, data: RoleInput): Promise<ApiResponse<Role>> {
+    const res = await api.put(`/roles/${encodeURIComponent(slug)}`, data);
     return res.data;
   },
 
-  async deleteRole(roleId: string) {
-    const res = await api.delete(`/roles/${encodeURIComponent(roleId)}`);
+  async deleteRole(slug: string): Promise<ApiResponse<null>> {
+    const res = await api.delete(`/roles/${encodeURIComponent(slug)}`);
     return res.data;
   },
 
-  async getAccessList() {
+  async getAccessList(): Promise<ApiResponse<PermissionModule[]>> {
     const res = await api.get('/roles/access-list');
+    return res.data;
+  },
+
+  // User types a role may carry (e.g. Administrator, Member).
+  async getUserTypes(): Promise<ApiResponse<string[]>> {
+    const res = await api.get('/roles/user-types');
     return res.data;
   },
 };

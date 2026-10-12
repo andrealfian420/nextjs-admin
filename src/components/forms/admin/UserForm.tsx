@@ -22,6 +22,7 @@ import { notFound, useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import type { Option } from '@/types/util';
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -79,7 +80,7 @@ export default function UserForm({ isEdit = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetching, setIsFetching] = useState(isEdit);
   const [isNotFound, setIsNotFound] = useState(false);
-  const [roles, setRoles] = useState<{ value: string; label: string }[]>([]);
+  const [roles, setRoles] = useState<Option[]>([]);
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -121,7 +122,7 @@ export default function UserForm({ isEdit = false }) {
           email: user.email ?? '',
           password: '',
           avatar: undefined,
-          roleId: user.roleId ? String(user.roleId) : '',
+          roleId: user.role ? String(user.role.id) : '',
         });
 
         if (user.avatar) {
@@ -146,7 +147,7 @@ export default function UserForm({ isEdit = false }) {
     const fetchOptions = async () => {
       try {
         const res = await utilService.getRoleOptions();
-        setRoles(res.data);
+        setRoles(res.data ?? []);
       } catch (err: unknown) {
         toast.error('Error', {
           description: 'Failed to load role options.',
@@ -279,7 +280,7 @@ export default function UserForm({ isEdit = false }) {
           email: user.email ?? '',
           password: '',
           avatar: undefined,
-          roleId: user.roleId ? String(user.roleId) : '',
+          roleId: user.role ? String(user.role.id) : '',
         });
         setAvatarPreview(user.avatarUrl ?? null);
       } catch (error: unknown) {

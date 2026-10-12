@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { User } from '@/types';
 
-const user = { id: 1, name: 'Admin', email: 'admin@example.test', roleId: 1 } as User;
+const user: User = { slug: 'admin', name: 'Admin', email: 'admin@example.test', avatar: null };
 
 describe('useAuthStore', () => {
   it('stores the access token and user, and clears both on logout', () => {

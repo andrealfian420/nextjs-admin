@@ -131,7 +131,7 @@ export default function ViewRoles() {
       await roleService.deleteRole(roleRow.slug);
       setRefreshKey((key) => key + 1);
       toast.success('Delete Successful', {
-        description: `${roleRow.name} has been removed.`,
+        description: `${roleRow.title} has been removed.`,
       });
     } catch (error: unknown) {
       let msg = 'An error occurred while deleting the role.';

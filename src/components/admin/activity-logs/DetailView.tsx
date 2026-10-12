@@ -48,6 +48,13 @@ function InfoRow({
   );
 }
 
+// Snapshots are JSON: an object for real changes, `[]` (the column default) when absent.
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
 function DataComparisonTable({
   oldData,
   newData,
@@ -199,7 +206,9 @@ export default function DetailActivityLog() {
     return null;
   }
 
-  const hasChanges = log.oldData || log.newData;
+  const oldData = asRecord(log.oldData);
+  const newData = asRecord(log.newData);
+  const hasChanges = oldData || newData;
 
   return (
     <div className='flex flex-col gap-4'>
@@ -209,9 +218,9 @@ export default function DetailActivityLog() {
         </h2>
         <dl>
           <InfoRow label='Action'>
-            <ActionBadge action={log.action} />
+            <ActionBadge action={log.action ?? '—'} />
           </InfoRow>
-          <InfoRow label='Subject Type'>{log.subjectType}</InfoRow>
+          <InfoRow label='Subject Type'>{log.subjectType ?? '—'}</InfoRow>
           <InfoRow label='Description'>{log.description}</InfoRow>
           <InfoRow label='Caused By'>{log.user?.name ?? '—'}</InfoRow>
           <InfoRow label='Caused At'>{log.causedAt}</InfoRow>
@@ -223,7 +232,7 @@ export default function DetailActivityLog() {
           <h2 className='text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-3'>
             Data Changes
           </h2>
-          <DataComparisonTable oldData={log.oldData} newData={log.newData} />
+          <DataComparisonTable oldData={oldData} newData={newData} />
 
           <div className='flex items-center justify-end mb-4 mt-6'>
             <Button
