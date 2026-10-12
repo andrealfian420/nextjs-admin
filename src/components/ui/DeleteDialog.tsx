@@ -18,13 +18,6 @@ import { cn } from '@/lib/utils';
 /**
  * Reusable delete confirmation dialog.
  *
- * @param {boolean}  open           - Controlled open state
- * @param {Function} onOpenChange   - Called when dialog requests open/close change
- * @param {object}   row            - The row object to delete (passed back to onConfirm)
- * @param {Function} onConfirm      - async (row) => void — called when user confirms
- * @param {string}   [title]        - Dialog title (default: "Delete Confirmation")
- * @param {string}   [description]  - Dialog body text (default: generic message)
- *
  * @example
  * <DeleteDialog
  *   open={!!deleteTarget}
@@ -33,37 +26,50 @@ import { cn } from '@/lib/utils';
  *   onConfirm={handleDelete}
  * />
  */
-interface DeleteDialogProps {
+interface DeleteDialogProps<T> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  row: unknown;
-  onConfirm: (row: unknown) => Promise<void>;
+  /** The row to delete, passed back to onConfirm. Null while nothing is selected. */
+  row: T | null | undefined;
+  /** Should report its own failure (e.g. a toast) and throw, so the dialog stays open. */
+  onConfirm: (row: T) => Promise<void> | void;
   title?: string;
-  description?: string;
+  description?: React.ReactNode;
 }
 
-export default function DeleteDialog({
+// `name` or `title` of the row, for the default message.
+function rowLabel(row: unknown): string {
+  if (row && typeof row === 'object') {
+    const { name, title } = row as { name?: unknown; title?: unknown };
+    const label = typeof name === 'string' && name ? name : title;
+    if (typeof label === 'string' && label) return label;
+  }
+  return 'this item';
+}
+
+export default function DeleteDialog<T>({
   open,
   onOpenChange,
   row,
   onConfirm,
   title = 'Delete Confirmation',
   description,
-}: DeleteDialogProps) {
+}: DeleteDialogProps<T>) {
   const [loading, setLoading] = useState(false);
 
   // Retain last non-null row so content doesn't flash to "this item" during close
-  const displayRowRef = useRef<Record<string, unknown> | null>(
-    row as Record<string, unknown> | null,
-  );
-  if (row) displayRowRef.current = row as Record<string, unknown>;
+  const displayRowRef = useRef(row);
+  if (row) displayRowRef.current = row;
   const displayRow = displayRowRef.current;
 
   const handleConfirm = async () => {
+    if (!displayRow) return;
+    setLoading(true);
     try {
-      setLoading(true);
       await onConfirm(displayRow);
       onOpenChange(false);
+    } catch {
+      // Stay open so the user can retry or cancel; onConfirm reported the failure.
     } finally {
       setLoading(false);
     }
@@ -96,11 +102,7 @@ export default function DeleteDialog({
                 <>
                   Are you sure you want to delete{' '}
                   <span className='font-medium text-zinc-700 dark:text-zinc-300'>
-                    {
-                      (displayRow?.name ??
-                        displayRow?.title ??
-                        'this item') as React.ReactNode
-                    }
+                    {rowLabel(displayRow)}
                   </span>
                   ? This action{' '}
                   <span className='font-medium text-red-500'>
@@ -124,7 +126,7 @@ export default function DeleteDialog({
             <Button
               className='p-2.5 flex-1 cursor-pointer bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500/40 dark:bg-red-600 dark:hover:bg-red-700'
               onClick={handleConfirm}
-              disabled={loading}
+              disabled={loading || !displayRow}
             >
               {loading ? (
                 <>

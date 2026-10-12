@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { toast as sonnerToast, ExternalToast } from 'sonner';
+import { toast as sonnerToast, type ExternalToast } from 'sonner';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
@@ -81,54 +81,28 @@ function buildOptions(type: ToastType, options: ExternalToast = {}) {
  * toast.error("Something went wrong", { description: "Please retry." })
  * toast.promise(fetchData(), { loading: "Fetching...", success: "Done!", error: "Failed" })
  */
+// Fills in the house defaults. `??`, not `||`: an explicit `duration: 0` is kept.
+function withDefaults(type: ToastType, options: ExternalToast = {}) {
+  return buildOptions(type, {
+    ...options,
+    position: options.position ?? 'top-right',
+    duration: options.duration ?? 5000,
+  });
+}
+
 const toast = Object.assign(
   (message: string, options?: ExternalToast) => sonnerToast(message, options),
   {
-    success: (message: string, options: ExternalToast = {}) =>
-      sonnerToast.success(
-        message,
-        buildOptions('success', {
-          ...options,
-          position: options.position || 'top-right',
-          duration: options.duration || 5000,
-        }),
-      ),
-    error: (message: string, options: ExternalToast = {}) =>
-      sonnerToast.error(
-        message,
-        buildOptions('error', {
-          ...options,
-          position: options.position || 'top-right',
-          duration: options.duration || 5000,
-        }),
-      ),
-    warning: (message: string, options: ExternalToast = {}) =>
-      sonnerToast.warning(
-        message,
-        buildOptions('warning', {
-          ...options,
-          position: options.position || 'top-right',
-          duration: options.duration || 5000,
-        }),
-      ),
-    info: (message: string, options: ExternalToast = {}) =>
-      sonnerToast.info(
-        message,
-        buildOptions('info', {
-          ...options,
-          position: options.position || 'top-right',
-          duration: options.duration || 5000,
-        }),
-      ),
-    loading: (message: string, options: ExternalToast = {}) =>
-      sonnerToast.loading(
-        message,
-        buildOptions('loading', {
-          ...options,
-          position: options.position || 'top-right',
-          duration: options.duration || 5000,
-        }),
-      ),
+    success: (message: string, options?: ExternalToast) =>
+      sonnerToast.success(message, withDefaults('success', options)),
+    error: (message: string, options?: ExternalToast) =>
+      sonnerToast.error(message, withDefaults('error', options)),
+    warning: (message: string, options?: ExternalToast) =>
+      sonnerToast.warning(message, withDefaults('warning', options)),
+    info: (message: string, options?: ExternalToast) =>
+      sonnerToast.info(message, withDefaults('info', options)),
+    loading: (message: string, options?: ExternalToast) =>
+      sonnerToast.loading(message, withDefaults('loading', options)),
     promise: <T,>(
       promise: Promise<T>,
       options: Parameters<typeof sonnerToast.promise>[1] & {
@@ -138,8 +112,8 @@ const toast = Object.assign(
     ) =>
       sonnerToast.promise(promise, {
         ...options,
-        position: options.position || 'top-right',
-        duration: options.duration || 5000,
+        position: options.position ?? 'top-right',
+        duration: options.duration ?? 5000,
       }),
     dismiss: (id?: string | number) => sonnerToast.dismiss(id),
   },
@@ -175,7 +149,7 @@ const Toast = ({
     const options = buildOptions(type as ToastType, {
       ...(description && { description }),
       ...(position && { position }),
-      ...(duration && { duration }),
+      ...(duration !== undefined && { duration }),
       ...(action && { action }),
     });
 

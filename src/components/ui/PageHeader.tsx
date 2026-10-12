@@ -55,10 +55,14 @@ export default function PageHeader({
                       <BreadcrumbPage className='text-zinc-600 dark:text-zinc-400 text-sm'>
                         {crumb.label}
                       </BreadcrumbPage>
+                    ) : !crumb.href ? (
+                      <span className='text-zinc-400 dark:text-zinc-500 text-sm'>
+                        {crumb.label}
+                      </span>
                     ) : (
                       <BreadcrumbLink asChild>
                         <Link
-                          href={crumb.href!}
+                          href={crumb.href}
                           className='text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-sm transition-colors'
                         >
                           {crumb.label}

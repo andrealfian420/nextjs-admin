@@ -53,6 +53,7 @@ function MultiSelect({
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState('');
+  const listId = React.useId();
 
   const selectedSet = new Set(value);
 
@@ -92,6 +93,7 @@ function MultiSelect({
           type='button'
           role='combobox'
           aria-expanded={open}
+          aria-controls={listId}
           aria-invalid={ariaInvalid}
           disabled={disabled}
           data-slot='multi-select-trigger'
@@ -176,7 +178,12 @@ function MultiSelect({
           )}
 
           {/* Options list */}
-          <div className='max-h-48 overflow-y-auto p-1'>
+          <div
+            id={listId}
+            role='listbox'
+            aria-multiselectable='true'
+            className='max-h-48 overflow-y-auto p-1'
+          >
             {filteredOptions.length === 0 ? (
               <p className='py-4 text-center text-sm text-muted-foreground'>
                 No options found.
@@ -186,6 +193,8 @@ function MultiSelect({
                 <button
                   key={opt.value}
                   type='button'
+                  role='option'
+                  aria-selected={selectedSet.has(opt.value)}
                   onClick={() => toggle(opt.value)}
                   className='flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground'
                 >

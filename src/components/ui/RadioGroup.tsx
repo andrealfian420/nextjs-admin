@@ -54,7 +54,7 @@ function RadioGroupItem({
 interface RadioGroupFieldProps {
   id: string;
   value: string;
-  label: string;
+  label: React.ReactNode;
   description?: string;
   className?: string;
 }

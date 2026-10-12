@@ -86,7 +86,7 @@ function CheckboxField({
   ...checkboxProps
 }: React.ComponentProps<typeof CheckboxPrimitive.Root> & {
   id: string;
-  label: string;
+  label: React.ReactNode;
   description?: string;
   indeterminate?: boolean;
 }) {

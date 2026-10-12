@@ -40,7 +40,7 @@ function Switch({
  */
 type SwitchFieldProps = React.ComponentProps<typeof SwitchPrimitive.Root> & {
   id: string;
-  label: string;
+  label: React.ReactNode;
   description?: string;
   className?: string;
 };
