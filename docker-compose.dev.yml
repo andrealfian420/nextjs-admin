@@ -1,20 +1,17 @@
+# Development override, always used together with docker-compose.yml (see `make dev`).
+# Keep the project on the WSL/Linux filesystem: file events from /mnt/c do not reach the
+# container and Fast Refresh stops working.
 services:
   app:
-    container_name: nextjs-admin
     build:
       target: deps
     command: npm run dev
-    ports:
-      - '127.0.0.1:3000:3000'
     volumes:
       - .:/app
-      - /app/node_modules
-      - /app/.next
-    env_file:
-      - .env
-    environment:
-      - WATCHPACK_POLLING=true
-    restart: unless-stopped
+      # Named volumes, scoped to this Compose project (so separate clones never share
+      # them) and kept across restarts. After changing dependencies run `make clean`.
+      - node_modules:/app/node_modules
+      - next:/app/.next
     deploy:
       resources:
         limits:
@@ -23,9 +20,7 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
-    networks:
-      - express-core-network
 
-networks:
-  express-core-network:
-    external: true
+volumes:
+  node_modules:
+  next:

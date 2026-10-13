@@ -4,6 +4,21 @@ node_modules
 .gitignore
 .env
 .env.local
+.env*.local
 *.md
+docs
 Makefile
 docker-compose*.yml
+Dockerfile
+.dockerignore
+bitbucket-pipelines.yml
+coverage
+.vscode
+.idea
+
+# Tests never take part in the image build (tsconfig still type-checks what is copied).
+vitest.config.mts
+src/test
+__mocks__
+**/*.test.ts
+**/*.test.tsx

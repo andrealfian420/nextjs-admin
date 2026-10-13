@@ -20,9 +20,9 @@ logs:
 down:
 	docker compose down
 
-# Stop and remove volumes (fresh start)
+# Stop and remove the project's volumes too (fresh node_modules and .next for dev)
 clean:
-	docker compose down -v
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 
 # Shell into app container
 shell:

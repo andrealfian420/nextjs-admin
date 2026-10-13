@@ -9,7 +9,7 @@
 │  ┌───────────────────────────────────────────────┐  │
 │  │  Docker Container: app                        │  │
 │  │                                               │  │
-│  │  Next.js (Node 22 Alpine)                     │  │
+│  │  Next.js (Node 24 Alpine)                     │  │
 │  │  ├── SSR Pages (admin, auth, etc.)            │  │
 │  │  ├── /api/* → Proxy to Backend (API_URL)      │  │
 │  │  └── Static Assets (.next/static, public/)    │  │
@@ -31,6 +31,7 @@
 ├── docker-compose.dev.yml  # Dev override (hot-reload + volume mount)
 ├── .dockerignore           # Exclude files from build context
 ├── Makefile                # Developer-friendly commands
+├── bitbucket-pipelines.yml # CI quality gate (lint, typecheck, test, build)
 └── .env.example            # Environment variables reference
 ```
 
@@ -38,8 +39,9 @@
 
 ### Prerequisites
 
-- Docker & Docker Compose installed
+- Docker with BuildKit (the default builder; the Dockerfile uses cache mounts) and Docker Compose
 - Backend API stack running (with its Docker network created)
+- On Windows: the project on the WSL filesystem (e.g. `~/projects`), not under `/mnt/c`
 - `.env` file configured (copy from `.env.example`)
 
 ### Development (Hot-Reload)
@@ -75,9 +77,12 @@ Builds an optimized standalone image and runs at `http://127.0.0.1:3000`.
 
 ## Environment Variables
 
-| Variable  | Required | Description                        |
-| --------- | -------- | ---------------------------------- |
-| `API_URL` | Yes      | Backend API URL proxied by Next.js |
+| Variable    | Required | When read            | Description                                                             |
+| ----------- | -------- | -------------------- | ----------------------------------------------------------------------- |
+| `API_URL`   | Yes      | Runtime + build time | Backend API URL proxied by the `/api` BFF; at build time it also allows `/storage/uploads/**` on that host for `next/image` |
+| `MEDIA_URL` | No       | Build time           | Comma-separated extra image origins/path prefixes for `next/image` (see `.env.example`) |
+
+Build-time values are passed as build args by `docker-compose.yml` (taken from `.env` or the shell). Rebuild (`make prod`) after changing them.
 
 ### Example `API_URL` values:
 
@@ -118,7 +123,7 @@ This project uses an **external Docker network** to communicate with the backend
 
 - Container name: `nextjs-admin`
 - Network: `express-core-network` (external)
-- Builds from Dockerfile (full multi-stage, standalone output)
+- Builds from Dockerfile (full multi-stage, standalone output) with `API_URL`/`MEDIA_URL` build args
 - Port bind: `127.0.0.1:3000:3000`
 - Healthcheck via wget
 - Restart policy: `unless-stopped`
@@ -126,19 +131,21 @@ This project uses an **external Docker network** to communicate with the backend
 
 ### `docker-compose.dev.yml` (Development Override)
 
-- Container name: `nextjs-admin`
-- Network: `express-core-network` (external)
+Always used together with `docker-compose.yml` (`make dev`); it inherits the container name, network, port and `.env`.
+
 - Builds only up to `deps` stage
-- Command: `npm run dev` (Next.js dev server)
-- Volume mounts: source code + anonymous volumes for `node_modules` and `.next` (performance optimization on Windows/Mac)
-- `WATCHPACK_POLLING=true` for file watching in Docker
+- Command: `npm run dev` (Next.js dev server, Turbopack)
+- Volume mounts: source code + named volumes `node_modules` and `next` (`/app/.next`). Compose prefixes them with the project name (e.g. `nextjs-admin_node_modules`), so separate clones never share them, and they survive restarts. After changing dependencies, run `make clean && make dev`.
+- No file-watch polling: Turbopack gets file events from the bind mount as long as the project is on the Linux/WSL filesystem
 - Resource limits: 2 CPUs / 2GB memory (reserved: 0.5 CPU / 512MB)
 
 ## Dockerfile Stages
 
-1. **deps** — Install all npm dependencies on Alpine
-2. **builder** — Copy source, run `next build`, produce `.next/standalone`
-3. **runner** — Minimal image, copy standalone output + static + public, run as non-root user `nextjs`
+All stages use `node:24-alpine` (Node 24 / npm 11, as in `package.json` `engines` and CI).
+
+1. **deps** — `npm ci` from the lockfile, with npm's download cache in a BuildKit cache mount
+2. **builder** — Copy source (tests and docs are excluded by `.dockerignore`), run `next build` with the `API_URL`/`MEDIA_URL` build args. The Turbopack build cache (`.next/cache`) lives in a BuildKit cache mount, so rebuilds start warm and the cache never ends up in a layer
+3. **runner** — Minimal image, copy standalone output + static + public, run as non-root user `nextjs` (group `nodejs`). `.next` is owned by that user because the image optimizer writes `.next/cache` at runtime
 
 ## Resource Limits
 
@@ -165,12 +172,16 @@ Development has higher limits due to Next.js dev server running TypeScript compi
 
 ### Hot-reload not working in dev mode
 
-- Ensure `WATCHPACK_POLLING=true` is set in environment
+- Keep the project on the Linux/WSL filesystem: file events from `/mnt/c` (Windows drives) do not reach the container
 - Verify volume mount is correct (`.:/app`)
+
+### Dependencies missing or outdated in dev mode
+
+- `node_modules` lives in a named volume that is filled only when empty: run `make clean && make dev` after changing `package.json`
 
 ### Slow filesystem warning in dev mode
 
-- The `.next` and `node_modules` anonymous volumes should prevent this
+- The `.next` and `node_modules` named volumes should prevent this
 - If still slow, check Docker Desktop resource allocation
 
 ### Build fails due to memory
@@ -212,10 +223,11 @@ Copy the following files from this boilerplate into your project root:
 - `docker-compose.dev.yml`
 - `.dockerignore`
 - `Makefile`
+- `bitbucket-pipelines.yml` (optional CI quality gate)
 
 ### Step 3: Customize for your project
 
-Update these values in **both** `docker-compose.yml` and `docker-compose.dev.yml`:
+Update these values in `docker-compose.yml` (the dev override inherits them):
 
 | Setting          | What to change                     | Example               |
 | ---------------- | ---------------------------------- | --------------------- |
@@ -223,7 +235,7 @@ Update these values in **both** `docker-compose.yml` and `docker-compose.dev.yml
 | `networks`       | Your backend's Docker network name | `my-backend-network`  |
 | `ports`          | Change if port 3000 conflicts      | `127.0.0.1:3001:3000` |
 
-Update the `networks` block at the bottom of both files:
+Update the `networks` block at the bottom of `docker-compose.yml`:
 
 ```yaml
 networks:
@@ -241,17 +253,7 @@ Find your API container name with `docker ps` and use the **internal port** (the
 
 ### Step 5: Ensure `.dockerignore` exists
 
-```
-node_modules
-.next
-.git
-.gitignore
-.env
-.env.local
-*.md
-Makefile
-docker-compose*.yml
-```
+Copy it from this boilerplate. Besides `node_modules`, `.next`, `.git` and `.env*`, it excludes docs and every test file (`vitest.config.mts`, `src/test`, `__mocks__`, `*.test.ts(x)`), so the image build never type-checks code it does not ship.
 
 ### Step 6: Run
 
@@ -264,8 +266,20 @@ make prod   # Production-like
 ### Checklist
 
 - [ ] `next.config.ts` has `output: "standalone"`
-- [ ] `container_name` updated in both compose files
+- [ ] `container_name` updated in `docker-compose.yml`
 - [ ] `networks` updated to match your backend's network name
 - [ ] `.env` has correct `API_URL` with backend container name
 - [ ] Backend stack is running before starting frontend
 - [ ] `docker network ls` shows the external network exists
+
+---
+
+## CI (Bitbucket Pipelines)
+
+`bitbucket-pipelines.yml` runs one quality-gate step on every push, on `node:24`:
+
+```
+npm ci → npm run lint → npm run typecheck → npm run test:run → npm run build
+```
+
+The first failing command fails the build. npm's download cache and the Turbopack build cache (`.next/cache`) are cached between runs. No deployment is configured: add a deploy step for your own infrastructure if you need one.

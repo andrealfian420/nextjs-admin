@@ -1,0 +1,25 @@
+# Quality gate only: install, lint, typecheck, test and build on every push. Any failing
+# command fails the build. No deployment is configured.
+
+image: node:24
+
+definitions:
+  caches:
+    # npm ci deletes node_modules, so cache npm's download cache instead.
+    npm: ~/.npm
+    # Turbopack build cache (see Next.js "CI build caching").
+    nextcache: .next/cache
+
+pipelines:
+  default:
+    - step:
+        name: Lint, typecheck, test and build
+        caches:
+          - npm
+          - nextcache
+        script:
+          - npm ci
+          - npm run lint
+          - npm run typecheck
+          - npm run test:run
+          - npm run build

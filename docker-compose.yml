@@ -4,6 +4,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Build-time image allowlist (next.config.ts); rebuild after changing them.
+      args:
+        API_URL: ${API_URL:-}
+        MEDIA_URL: ${MEDIA_URL:-}
     ports:
       - '127.0.0.1:3000:3000'
     env_file:
