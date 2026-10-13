@@ -1,13 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { useEditor, EditorContent, type Editor } from '@tiptap/react';
+import {
+  useEditor,
+  useEditorState,
+  EditorContent,
+  type Editor,
+} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
-import Link from '@tiptap/extension-link';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 import TaskList from '@tiptap/extension-task-list';
@@ -107,6 +110,9 @@ function ToolbarButton({
 /* ------------------------------------------------------------------ */
 
 function ColorButton({ editor }: { editor: Editor }) {
+  // Reads the current colour from the mutable editor; see EditorToolbar.
+  'use no memo';
+
   const inputRef = React.useRef<HTMLInputElement>(null);
   const currentColor = editor.getAttributes('textStyle').color ?? '#000000';
 
@@ -176,6 +182,14 @@ function handleLinkToggle(editor: Editor) {
 /* ------------------------------------------------------------------ */
 
 function EditorToolbar({ editor }: { editor: Editor | null }) {
+  // Active and enabled states are read from the mutable editor during render. React
+  // Compiler would cache them (the `editor` reference never changes), so opt out.
+  'use no memo';
+
+  // useEditor does not re-render on transactions; without this the active states (bold,
+  // heading, ...) and Undo/Redo would lag until something else re-renders.
+  useEditorState({ editor, selector: ({ transactionNumber }) => transactionNumber });
+
   if (!editor) return null;
 
   return (
@@ -422,7 +436,8 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
  *
  * Props:
  *   value          {string}   — HTML string (controlled)
- *   onChange       {Function} — called with new HTML string on every change
+ *   onChange       {Function} — called with the new HTML on every user edit (never on
+ *                               mount, external value changes or `disabled` toggles)
  *   placeholder    {string}   — placeholder text shown when editor is empty
  *   minHeight      {string}   — min-height CSS value for the editable area (default '160px')
  *   disabled       {boolean}
@@ -457,22 +472,26 @@ function RichEditor({
   className,
   value,
   onChange,
-  placeholder = 'Start typing�',
+  placeholder = 'Start typing…',
   minHeight = '160px',
   disabled = false,
   'aria-invalid': ariaInvalid,
 }: RichEditorProps) {
+  // The HTML the editor currently holds, as last emitted or applied: lets the sync effect
+  // tell an outside change from the echo of the editor's own onChange.
+  const synced = React.useRef(value ?? '');
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
+      // StarterKit 3 already bundles Underline and Link; adding them again duplicates them.
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        link: { openOnClick: false, autolink: true },
       }),
-      Underline,
       Placeholder.configure({ placeholder }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Highlight,
-      Link.configure({ openOnClick: false, autolink: true }),
       Subscript,
       Superscript,
       TaskList,
@@ -483,32 +502,30 @@ function RichEditor({
     content: value ?? '',
     editable: !disabled,
     onUpdate({ editor }) {
-      const html = editor.getHTML();
-      onChange?.(html === '<p></p>' ? '' : html);
+      const raw = editor.getHTML();
+      const html = raw === '<p></p>' ? '' : raw;
+      synced.current = html;
+      onChange?.(html);
     },
     editorProps: {
       attributes: { class: 'outline-none' },
     },
   });
 
-  // Sync external value changes (e.g. form reset) without resetting cursor
-  const isFirstRender = React.useRef(true);
+  // Apply a value that came from outside (async load, form reset, Discard). The editor's own
+  // output echoed back through `value` is skipped, so typing never resets the cursor.
+  // emitUpdate: false — loading content is not an edit and must not mark the form dirty.
   React.useEffect(() => {
-    if (!editor) return;
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    const current = editor.getHTML();
     const incoming = value ?? '';
-    if (current !== incoming && (incoming === '' || incoming === '<p></p>')) {
-      editor.commands.setContent(incoming, { emitUpdate: false });
-    }
+    if (!editor || incoming === synced.current) return;
+    synced.current = incoming;
+    editor.commands.setContent(incoming, { emitUpdate: false });
   }, [editor, value]);
 
-  // Sync editable state
+  // emitUpdate: false — Tiptap otherwise emits an update and onChange would hand the form
+  // its normalized copy of the stored HTML: a false "dirty".
   React.useEffect(() => {
-    editor?.setEditable(!disabled);
+    editor?.setEditable(!disabled, false);
   }, [editor, disabled]);
 
   return (
