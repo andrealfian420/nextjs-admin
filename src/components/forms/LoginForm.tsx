@@ -13,7 +13,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/Toast';
-import { isAxiosError } from 'axios';
+import { applyApiFieldErrors } from '@/lib/api-errors';
+import { getApiErrorMessage } from '@/lib/utils';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -33,6 +34,7 @@ export default function LoginForm() {
     register,
     handleSubmit,
     setError,
+    getValues,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -54,42 +56,21 @@ export default function LoginForm() {
       const user = await authService.profile();
       setUser(user.data.data);
 
-      const duration = 2000;
-
-      toast.success('Login successful!', {
-        position: 'top-center',
-        duration,
+      toast.success('Login successful!', { position: 'top-center' });
+      // Stays loading until the dashboard replaces this page; the toast stays visible.
+      router.replace('/admin');
+    } catch (err: unknown) {
+      const { applied, description } = applyApiFieldErrors(err, {
+        setError,
+        getValues,
       });
 
-      setTimeout(() => {
-        setIsLoading(false);
-        router.push('/admin');
-      }, duration);
-    } catch (err: unknown) {
-      if (isAxiosError(err)) {
-        const apiErrors = err.response?.data?.errors;
-        const apiMessage = err.response?.data?.message;
-
-        if (apiErrors) {
-          apiErrors.forEach((e: { field: string; message: string }) => {
-            setError(e.field as 'email' | 'password', { message: e.message });
-          });
-        } else {
-          toast.error(
-            apiMessage || 'Login failed. Please check your credentials.',
-            {
-              position: 'top-center',
-              duration: 10000,
-            },
-          );
-        }
-      } else {
-        toast.error('Login failed. Please check your credentials.', {
-          position: 'top-center',
-          duration: 10000,
-        });
-      }
-
+      toast.error(
+        applied.length
+          ? description
+          : getApiErrorMessage(err, 'Login failed. Please check your credentials.'),
+        { position: 'top-center', duration: 10000 },
+      );
       setIsLoading(false);
     }
   };
@@ -111,6 +92,7 @@ export default function LoginForm() {
             id='email'
             type='email'
             placeholder='you@example.com'
+            autoComplete='email'
             aria-invalid={!!errors.email}
             {...register('email')}
           />
@@ -141,6 +123,7 @@ export default function LoginForm() {
               id='password'
               type={isPasswordVisible ? 'text' : 'password'}
               placeholder='••••••••'
+              autoComplete='current-password'
               aria-invalid={!!errors.password}
               {...register('password')}
             />
@@ -149,6 +132,7 @@ export default function LoginForm() {
               type='button'
               variant='ghost'
               size='icon'
+              aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
               className='absolute right-1.5 top-1/2 -translate-y-1/2 size-7 cursor-pointer text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-transparent'
             >
               {isPasswordVisible ? <EyeOff size={16} /> : <Eye size={16} />}

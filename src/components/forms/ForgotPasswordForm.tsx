@@ -3,39 +3,52 @@
 import { useState } from 'react';
 import { authService } from '@/services/authService';
 import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import AuthSplitShell from '@/components/layout/auth/AuthSplitShell';
-import { isAxiosError } from 'axios';
+import { getApiErrorMessage } from '@/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+const schema = z.object({
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+});
+
+type ForgotPasswordValues = z.infer<typeof schema>;
+
+/**
+ * Asks the backend to email a reset link (POST /auth/request-password-reset). The answer is
+ * the same whether or not the account exists, so the success notice says so too.
+ */
 export default function ForgotPasswordForm() {
-  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ForgotPasswordValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: '' },
+  });
+
+  const onSubmit = async (data: ForgotPasswordValues) => {
     setIsLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      await authService.forgotPassword({ email });
-
+      await authService.forgotPassword(data);
       setSuccess(true);
     } catch (err: unknown) {
-      if (isAxiosError(err)) {
-        setError(
-          err.response?.data?.message ||
-            'Something went wrong. Please try again.',
-        );
-      } else {
-        setError('Something went wrong. Please try again.');
-      }
+      setError(getApiErrorMessage(err, 'Something went wrong. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -68,27 +81,31 @@ export default function ForgotPasswordForm() {
         <div className='mb-4'>
           <Alert variant='success' onDismiss={() => setSuccess(false)}>
             <AlertDescription>
-              A password reset link has been sent to your email.
+              If an account exists for that email, a reset link is on its way.
             </AlertDescription>
           </Alert>
         </div>
       )}
 
-      <form onSubmit={handleForgotPassword} className='space-y-4'>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className='space-y-4'>
         <div className='space-y-1.5'>
-          <label
-            htmlFor='email'
-            className='text-sm font-medium text-zinc-700 dark:text-zinc-300'
-          >
+          <Label htmlFor='email' className='text-zinc-700 dark:text-zinc-300'>
             Email
-          </label>
+          </Label>
           <Input
             id='email'
             type='email'
             placeholder='you@example.com'
-            onChange={(e) => setEmail(e.target.value)}
-            required
+            autoComplete='email'
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'email-error' : undefined}
+            {...register('email')}
           />
+          {errors.email && (
+            <p id='email-error' className='text-xs text-red-600 dark:text-red-400'>
+              {errors.email.message}
+            </p>
+          )}
         </div>
 
         <Button
@@ -112,7 +129,7 @@ export default function ForgotPasswordForm() {
           href='/login'
           className='inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors'
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft size={14} aria-hidden />
           Back to sign in
         </Link>
       </div>
