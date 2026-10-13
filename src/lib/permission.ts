@@ -1,4 +1,4 @@
-import type { MenuItem } from '@/types/ui';
+import type { MenuItem, MenuLink } from '@/types/ui';
 import type { UserProfile } from '@/types/user';
 
 // UI-side permission checks against the signed-in user's `role.access`. They decide what to
@@ -21,19 +21,19 @@ export function hasAccess(
   return access.includes(permission);
 }
 
-// Items without `access` are visible to every signed-in user; a parent is dropped when none
-// of its children is visible.
+// Links without `access` are visible to every signed-in user; a group is dropped when none
+// of its links is visible.
 export function filterMenuByAccess(
   menu: MenuItem[],
   user: UserProfile | null | undefined,
 ): MenuItem[] {
-  const visible = (item: MenuItem) =>
-    !item.access || hasAccess(user, item.access);
+  const visible = (link: MenuLink) =>
+    !link.access || hasAccess(user, link.access);
 
-  return menu.flatMap((item) => {
-    if (item.separator) return [item];
+  return menu.flatMap((item): MenuItem[] => {
+    if ('separator' in item) return [item];
 
-    if (item.children) {
+    if ('children' in item) {
       const children = item.children.filter(visible);
       return children.length > 0 ? [{ ...item, children }] : [];
     }

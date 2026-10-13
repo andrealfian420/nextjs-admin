@@ -1,112 +1,31 @@
 'use client';
 
+import { Menu } from 'lucide-react';
 import { useSidebarStore } from '@/store/useSidebarStore';
-import { User, Menu, SunIcon, MoonIcon } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/DropdownMenu';
-import Link from 'next/link';
-import { useTheme } from 'next-themes';
-import { useLogout } from '@/hooks/useLogout';
-import { useEffect, useState } from 'react';
-import { useAuthStore } from '@/store/useAuthStore';
-import Image from 'next/image';
+import ThemeToggle from '@/components/frontend/ThemeToggle';
+import ProfileMenu from '@/components/layout/admin/profile/ProfileMenu';
+import { ADMIN_SIDEBAR_ID } from '@/components/layout/admin/Sidebar';
 
 export default function Navbar() {
-  const setIsOpen = useSidebarStore((state) => state.toggleSidebar);
-  const user = useAuthStore((state) => state.user);
-  const { resolvedTheme, setTheme } = useTheme();
-  const { handleLogout } = useLogout();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // resolvedTheme is undefined before client hydration — used as mount guard
-  const toggleTheme = () => {
-    return setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  };
-
-  const profilePicture = () => {
-    if (user?.avatarUrl) {
-      return (
-        <Image
-          unoptimized
-          width={12}
-          height={12}
-          src={user.avatarUrl}
-          alt='Profile'
-          className='h-8 w-8 rounded-full object-cover cursor-pointer'
-        />
-      );
-    }
-
-    return (
-      <User
-        size={16}
-        className='text-zinc-600 dark:text-zinc-300 cursor-pointer'
-      />
-    );
-  };
+  const isOpen = useSidebarStore((state) => state.isOpen);
+  const toggleSidebar = useSidebarStore((state) => state.toggleSidebar);
 
   return (
-    <header className='h-14 bg-white dark:bg-zinc-900 border-b border-zinc-200/70 dark:border-zinc-800/50 flex items-center justify-between px-6'>
-      <div>
-        <Menu
-          className='cursor-pointer hover:opacity-75 transition text-zinc-700 dark:text-zinc-300'
-          size={18}
-          onClick={setIsOpen}
-        />
-      </div>
+    <header className='h-14 shrink-0 bg-white dark:bg-zinc-900 border-b border-zinc-200/70 dark:border-zinc-800/50 flex items-center justify-between px-4 sm:px-6'>
+      <button
+        type='button'
+        onClick={toggleSidebar}
+        aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
+        aria-expanded={isOpen}
+        aria-controls={ADMIN_SIDEBAR_ID}
+        className='cursor-pointer rounded-lg p-2 text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
+      >
+        <Menu size={18} aria-hidden />
+      </button>
 
-      <div className='flex items-center gap-4'>
-        {/* Theme toggle — only renders after mounted */}
-        {mounted && (
-          <button
-            onClick={toggleTheme}
-            aria-label='Toggle theme'
-            className='relative p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer'
-          >
-            {resolvedTheme === 'dark' ? (
-              <SunIcon size={18} className='text-zinc-400' />
-            ) : (
-              <MoonIcon size={18} className='text-zinc-600' />
-            )}
-          </button>
-        )}
-
-        {/* <button className='relative p-2 rounded-lg hover:bg-slate-100 transition cursor-pointer'>
-          <Bell size={18} className='text-slate-600 cursor-pointer' />
-        </button> */}
-
-        <div className='flex items-center gap-3'>
-          <div className='h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center'>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                {profilePicture()}
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent className='mt-4 mr-4 p-0'>
-                <DropdownMenuItem
-                  asChild
-                  className='w-full h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 p-2 rounded-md transition cursor-pointer'
-                >
-                  <Link href='/admin/profile'>Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className='w-full h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 p-2 rounded-md transition cursor-pointer'
-                  onClick={() => handleLogout()}
-                >
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+      <div className='flex items-center gap-2'>
+        <ThemeToggle />
+        <ProfileMenu variant='navbar' />
       </div>
     </header>
   );

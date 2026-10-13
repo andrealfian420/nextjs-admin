@@ -4,6 +4,7 @@ import Link from 'next/link';
 import ThemeToggle from '@/components/frontend/ThemeToggle';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { config } from '@/config';
 
 export default function NotFound() {
   const handleGoBack = () => {
@@ -26,7 +27,7 @@ export default function NotFound() {
           <div className='flex items-center justify-center mb-6'>
             <div className='w-10 h-10 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center'>
               <span className='text-sm font-bold text-white dark:text-zinc-900'>
-                NA
+                {config.shortName}
               </span>
             </div>
           </div>

@@ -2,15 +2,30 @@
 
 import type { ComponentType } from 'react';
 
-export interface MenuItem {
-  name?: string;
-  icon?: ComponentType<{ size?: number; className?: string }>;
-  key?: string;
-  href?: string;
+type MenuIcon = ComponentType<{ size?: number; className?: string }>;
+
+/** A navigation link. Without `access` it is visible to every signed-in user. */
+export interface MenuLink {
+  key: string;
+  name: string;
+  href: string;
+  icon?: MenuIcon;
   access?: string | string[];
-  children?: MenuItem[];
-  separator?: boolean;
 }
+
+/** A collapsible group; hidden when none of its links is visible. */
+export interface MenuGroup {
+  key: string;
+  name: string;
+  icon?: MenuIcon;
+  children: MenuLink[];
+}
+
+export interface MenuSeparator {
+  separator: true;
+}
+
+export type MenuItem = MenuLink | MenuGroup | MenuSeparator;
 
 export interface PendingToast {
   type: 'success' | 'error' | 'warning' | 'info';

@@ -49,7 +49,11 @@ describe('filterMenuByAccess', () => {
     { name: 'Activity Logs', key: 'logs', href: '/admin/activity-logs', access: LOG_INDEX },
   ];
 
-  const names = (items: MenuItem[]) => items.map((item) => item.name);
+  const names = (items: MenuItem[]) => items.map((item) => ('name' in item ? item.name : '—'));
+  const childrenOf = (items: MenuItem[], name: string) => {
+    const group = items.find((item) => 'children' in item && item.name === name);
+    return group && 'children' in group ? group.children.map((child) => child.name) : undefined;
+  };
 
   it('keeps only the items the user can reach', () => {
     const result = filterMenuByAccess(menu, userWith([LOG_INDEX]));
@@ -59,14 +63,13 @@ describe('filterMenuByAccess', () => {
 
   it('keeps separators and items without an access requirement', () => {
     const result = filterMenuByAccess(menu, userWith([]));
-    expect(result.some((item) => item.separator)).toBe(true);
+    expect(result.some((item) => 'separator' in item)).toBe(true);
     expect(names(result)).toContain('Dashboard');
   });
 
   it('keeps only the permitted children of a parent item', () => {
     const result = filterMenuByAccess(menu, userWith([ROLE_INDEX]));
-    const parent = result.find((item) => item.name === 'Master Data');
-    expect(parent?.children?.map((child) => child.name)).toEqual(['Roles']);
+    expect(childrenOf(result, 'Master Data')).toEqual(['Roles']);
   });
 
   it('keeps a child that declares no access requirement', () => {
@@ -74,7 +77,7 @@ describe('filterMenuByAccess', () => {
       [{ name: 'Group', key: 'g', children: [{ name: 'Open', key: 'o', href: '/admin/open' }] }],
       userWith([]),
     );
-    expect(result[0]?.children?.map((child) => child.name)).toEqual(['Open']);
+    expect(childrenOf(result, 'Group')).toEqual(['Open']);
   });
 
   it('hides restricted items from an anonymous visitor', () => {
