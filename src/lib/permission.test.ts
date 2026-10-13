@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { filterMenuByAccess, hasAccess } from '@/lib/permission';
-import type { MenuItem, User } from '@/types';
+import type { MenuItem, UserProfile } from '@/types';
 
 const userWith = (access: string[]) =>
-  ({ role: { access } }) as unknown as User;
+  ({ role: { access } }) as unknown as UserProfile;
 
 const USER_INDEX = 'module.master-data.user.index';
 const ROLE_INDEX = 'module.master-data.role.index';
@@ -28,9 +28,9 @@ describe('hasAccess', () => {
 
   it('denies access for a missing user, role or access list', () => {
     expect(hasAccess(null, USER_INDEX)).toBe(false);
-    expect(hasAccess({} as User, USER_INDEX)).toBe(false);
-    expect(hasAccess({ role: null } as unknown as User, USER_INDEX)).toBe(false);
-    expect(hasAccess({ role: { access: 'oops' } } as unknown as User, USER_INDEX)).toBe(false);
+    expect(hasAccess({} as UserProfile, USER_INDEX)).toBe(false);
+    expect(hasAccess({ role: null } as unknown as UserProfile, USER_INDEX)).toBe(false);
+    expect(hasAccess({ role: { access: 'oops' } } as unknown as UserProfile, USER_INDEX)).toBe(false);
   });
 });
 

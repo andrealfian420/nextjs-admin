@@ -160,7 +160,7 @@ Development has higher limits due to Next.js dev server running TypeScript compi
 
 - Container runs as non-root user (`nextjs:nodejs`, UID 1001)
 - Port only binds to `127.0.0.1` (not accessible from external network)
-- Use a reverse proxy (Nginx/Caddy) in front for production with SSL
+- Use a reverse proxy (Nginx/Caddy) in front for production with SSL. It must pass the public host on (`proxy_set_header Host $host;` or `X-Forwarded-Host`): the login, refresh and logout routes compare it with the browser's `Origin` and answer 403 otherwise (see README → Deploying behind a reverse proxy)
 
 ## Troubleshooting
 
