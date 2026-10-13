@@ -1,8 +1,11 @@
 'use client';
 
+import { AdminFormActions } from '@/components/ui/AdminFormActions';
 import { Button } from '@/components/ui/Button';
+import { ImagePickerField } from '@/components/ui/ImagePickerField';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import { LoadFailed } from '@/components/ui/LoadFailed';
 import {
   Select,
   SelectContent,
@@ -12,84 +15,86 @@ import {
 } from '@/components/ui/Select';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/Toast';
+import { useObjectUrl } from '@/hooks/useObjectUrl';
+import { applyApiFieldErrors, isNotFoundError } from '@/lib/api-errors';
+import { getApiErrorMessage } from '@/lib/utils';
 import { userService } from '@/services/userService';
 import { utilService } from '@/services/utilService';
-import { isAxiosError } from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, RefreshCwIcon, Upload, X } from 'lucide-react';
-import Image from 'next/image';
+import { Eye, EyeOff } from 'lucide-react';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { Controller, useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import type { Option } from '@/types/util';
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const isAcceptedImage = (file: File) =>
+  ACCEPTED_IMAGE_TYPES.includes(file.type) && file.size <= MAX_FILE_SIZE;
 
-function userSchema(isEdit = false) {
+// min 8, has 1 uppercase, 1 number and special character
+const STRONG_PASSWORD = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+const PASSWORD_RULE =
+  'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character';
+
+function userSchema(isEdit: boolean) {
   return z.object({
     name: z.string().min(1, 'Full name is required'),
     email: z.string().email('Invalid email address'),
-    password: isEdit
-      ? z
-          .string()
-          .refine((val) => {
-            // min 8, has 1 uppercase, 1 number and special character
-            return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
-              val,
-            );
-          }, 'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character')
-          .optional()
-          .or(z.literal(''))
-      : z.string().refine((val) => {
-          // min 8, has 1 uppercase, 1 number and special character
-          return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
-            val,
-          );
-        }, 'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character'),
+    // Blank on edit keeps the current password.
+    password: z
+      .string()
+      .refine((val) => (isEdit && !val) || STRONG_PASSWORD.test(val), PASSWORD_RULE),
     avatar: z
-      .any()
+      .custom<File | undefined>()
       .refine(
-        (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file?.type),
+        (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
         'Only JPG, PNG, and WEBP formats are allowed',
       )
       .refine(
-        (file) => !file || file?.size <= MAX_FILE_SIZE,
+        (file) => !file || file.size <= MAX_FILE_SIZE,
         'Avatar size must not exceed 2MB',
       )
-      .refine((file) => {
-        if (isEdit) {
-          return true; // Skip required check in edit mode
-        }
-
-        return file instanceof File;
-      }, 'Avatar is required'),
+      .refine((file) => isEdit || file instanceof File, 'Avatar is required'),
     roleId: z.string().min(1, 'Role is required'),
   });
 }
 
-export default function UserForm({ isEdit = false }) {
-  const params = useParams();
-  const slug = isEdit ? (params?.slug as string) : null;
+type UserFormValues = z.infer<ReturnType<typeof userSchema>>;
+
+const EMPTY: UserFormValues = {
+  name: '',
+  email: '',
+  password: '',
+  avatar: undefined,
+  roleId: '',
+};
+
+/**
+ * User create/edit form. Edit loads the user by slug; a stored avatar can only be replaced
+ * (cancelling a new pick restores it). Discard changes restores the loaded user (or the empty
+ * form) locally, without a request. API field errors are shown next to their fields.
+ */
+export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
+  // Opted out of React Compiler: it memoizes register() calls, but every reset() empties
+  // react-hook-form's mounted-field set that those calls refill, so a later Discard would not
+  // write the restored values back into the inputs.
+  'use no memo';
+
+  const { slug } = useParams<{ slug?: string }>();
+  const userSlug = isEdit ? (slug ?? null) : null;
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFetching, setIsFetching] = useState(isEdit);
-  const [isNotFound, setIsNotFound] = useState(false);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'missing' | 'failed'>(
+    'loading',
+  );
+  const [attempt, setAttempt] = useState(0);
   const [roles, setRoles] = useState<Option[]>([]);
-  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
-    };
-  }, []);
-
-  const schema = userSchema(isEdit);
+  /** URL of the stored avatar; shown again when a new pick is cancelled. */
+  const [savedAvatarUrl, setSavedAvatarUrl] = useState<string | null>(null);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -97,74 +102,67 @@ export default function UserForm({ isEdit = false }) {
     control,
     setValue,
     reset,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      avatar: undefined,
-      roleId: '',
-    },
+    setError,
+    getValues,
+    clearErrors,
+    formState: { errors, isDirty, defaultValues },
+  } = useForm<UserFormValues>({
+    resolver: zodResolver(userSchema(isEdit)),
+    defaultValues: EMPTY,
   });
 
+  const avatar = useWatch({ control, name: 'avatar' });
+  const avatarUrl = useObjectUrl(
+    avatar instanceof File && isAcceptedImage(avatar) ? avatar : null,
+  );
+
+  // Role options and (on edit) the user load together: the form is useless without either.
   useEffect(() => {
-    if (!slug) return;
+    let active = true;
 
-    const fetchData = async () => {
-      try {
-        const res = await userService.getUser(slug);
-        const user = res.data;
-
-        reset({
-          name: user.name ?? '',
-          email: user.email ?? '',
-          password: '',
-          avatar: undefined,
-          roleId: user.role ? String(user.role.id) : '',
-        });
-
-        if (user.avatar) {
-          setAvatarPreview(user.avatarUrl ?? null);
+    Promise.all([
+      utilService.getRoleOptions(),
+      userSlug ? userService.getUser(userSlug) : null,
+    ])
+      .then(([options, detail]) => {
+        if (!active) return;
+        setRoles(options.data ?? []);
+        if (detail) {
+          const user = detail.data;
+          reset({
+            ...EMPTY,
+            name: user.name ?? '',
+            email: user.email ?? '',
+            roleId: user.role ? String(user.role.id) : '',
+          });
+          setSavedAvatarUrl(user.avatarUrl ?? null);
         }
-      } catch (err: unknown) {
-        if (isAxiosError(err) && err.response?.status === 404) {
-          setIsNotFound(true);
-          return;
-        }
-      } finally {
-        setIsFetching(false);
-      }
+        setStatus('ready');
+      })
+      .catch((err: unknown) => {
+        if (active) setStatus(isNotFoundError(err) ? 'missing' : 'failed');
+      });
+
+    return () => {
+      active = false;
     };
+  }, [userSlug, reset, attempt]);
 
-    fetchData();
-  }, [slug, reset]);
+  if (status === 'missing') notFound();
 
-  useEffect(() => {
-    setIsFetching(true);
-
-    const fetchOptions = async () => {
-      try {
-        const res = await utilService.getRoleOptions();
-        setRoles(res.data ?? []);
-      } catch (err: unknown) {
-        toast.error('Error', {
-          description: 'Failed to load role options.',
-        });
-      } finally {
-        setIsFetching(false);
-      }
-    };
-
-    fetchOptions();
-  }, []);
-
-  if (isNotFound) {
-    notFound();
+  if (status === 'failed') {
+    return (
+      <LoadFailed
+        message={isEdit ? 'Failed to load the user.' : 'Failed to load the role options.'}
+        onRetry={() => {
+          setStatus('loading');
+          setAttempt((n) => n + 1);
+        }}
+      />
+    );
   }
 
-  if (isFetching) {
+  if (status === 'loading') {
     return (
       <div className='flex justify-center items-center py-20'>
         <Spinner />
@@ -172,58 +170,23 @@ export default function UserForm({ isEdit = false }) {
     );
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // An invalid file is kept only so the schema can report it; it never gets a preview.
+  const pickAvatar = (file: File) =>
+    setValue('avatar', file, { shouldValidate: true, shouldDirty: true });
 
-    setValue('avatar', file, { shouldValidate: true });
-
-    if (
-      ACCEPTED_IMAGE_TYPES.includes(file.type) &&
-      file.size <= MAX_FILE_SIZE
-    ) {
-      if (avatarPreview?.startsWith('blob:')) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-
-      const objectUrl = URL.createObjectURL(file);
-      setAvatarPreview(objectUrl);
-    } else {
-      setAvatarPreview(null);
-    }
+  // Drops the new pick only: the stored avatar comes back and is never deleted.
+  const cancelAvatar = () => {
+    setValue('avatar', undefined, { shouldDirty: true });
+    clearErrors('avatar');
   };
 
-  const handleRemoveAvatar = () => {
-    if (avatarPreview?.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarPreview);
-    }
-    setValue('avatar', undefined, { shouldValidate: false });
-    setAvatarPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const onSubmit = async (data: z.infer<ReturnType<typeof userSchema>>) => {
+  const onSubmit: SubmitHandler<UserFormValues> = async (data) => {
     setIsSubmitting(true);
     try {
-      const payload = new FormData();
-      payload.append('name', data.name);
-      payload.append('email', data.email);
-      payload.append('roleId', data.roleId);
-
-      if (data.password) {
-        payload.append('password', data.password);
-      }
-
-      if (data.avatar instanceof File) {
-        payload.append('avatar', data.avatar);
-      }
-
-      if (isEdit) {
-        await userService.updateUser(slug!, payload);
+      if (userSlug) {
+        await userService.updateUser(userSlug, data);
       } else {
-        await userService.createUser(payload);
+        await userService.createUser(data);
       }
 
       toast.success('Success', {
@@ -232,70 +195,30 @@ export default function UserForm({ isEdit = false }) {
           : 'User created successfully!',
       });
 
-      redirectTimerRef.current = setTimeout(() => {
-        setIsSubmitting(false);
-        router.push('/admin/users');
-      }, 2000);
+      // The toaster lives in the root layout, so the notice stays visible on the list.
+      router.push('/admin/users');
     } catch (err: unknown) {
       setIsSubmitting(false);
-      let message = 'An error occurred. Please try again.';
+      const { applied, description } = applyApiFieldErrors(err, {
+        setError,
+        getValues,
+      });
 
-      const errObj = err as { response?: { data?: { message?: string } } };
-      if (errObj.response?.data?.message) {
-        message = errObj.response.data.message;
-      }
-
-      const toastMessage = `Failed to ${isEdit ? 'update' : 'create'} user.`;
-
-      toast.error(toastMessage, {
-        description: message,
+      toast.error(`Failed to ${isEdit ? 'update' : 'create'} user.`, {
+        description: applied.length ? description : getApiErrorMessage(err),
         position: 'top-right',
       });
     }
   };
 
-  const resetForm = async () => {
-    if (avatarPreview?.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarPreview);
-    }
-
-    if (!isEdit) {
-      reset({
-        name: '',
-        email: '',
-        password: '',
-        avatar: undefined,
-        roleId: '',
-      });
-      setAvatarPreview(null);
-    } else {
-      // Re-trigger fetch to restore original values
-      setIsFetching(true);
-
-      try {
-        const res = await userService.getUser(slug!);
-        const user = res.data;
-        reset({
-          name: user.name ?? '',
-          email: user.email ?? '',
-          password: '',
-          avatar: undefined,
-          roleId: user.role ? String(user.role.id) : '',
-        });
-        setAvatarPreview(user.avatarUrl ?? null);
-      } catch (error: unknown) {
-        toast.error('Error', {
-          description: 'Failed to reset form.',
-        });
-      } finally {
-        setIsFetching(false);
-      }
-    }
-  };
+  // Back to the loaded user (edit) or the empty form (create), new avatar included. Passing
+  // the baseline skips the native form reset; keepFieldsRef keeps the inputs registered.
+  const discardChanges = () =>
+    reset(defaultValues as UserFormValues, { keepFieldsRef: true });
 
   return (
-    <div className='bg-white dark:bg-zinc-800 p-4 rounded-lg'>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <div className='bg-white dark:bg-zinc-800 p-4 rounded-lg'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           <div className='space-y-1.5'>
             <Label htmlFor='name'>
@@ -354,6 +277,7 @@ export default function UserForm({ isEdit = false }) {
                 type='button'
                 size='icon-sm'
                 variant='ghost'
+                aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
                 className='absolute right-1 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-transparent'
                 onClick={() => setIsPasswordVisible((v) => !v)}
               >
@@ -401,91 +325,31 @@ export default function UserForm({ isEdit = false }) {
             </p>
           </div>
 
-          <div className='space-y-1.5'>
-            <Label>
-              Avatar {!isEdit && <span className='text-red-500 ml-0.5'>*</span>}
-            </Label>
-            <p className='text-xs text-muted-foreground -mt-1'>
-              JPG, PNG, WEBP — max 2 MB
-            </p>
-
-            <input
-              ref={fileInputRef}
-              type='file'
-              accept='.jpg,.jpeg,.png,.webp'
-              className='hidden'
-              onChange={handleAvatarChange}
-            />
-
-            {avatarPreview ? (
-              <div className='relative w-full h-64 rounded-lg overflow-hidden border border-border group cursor-pointer'>
-                <Image
-                  src={avatarPreview}
-                  alt='Avatar preview'
-                  fill
-                  className='object-cover'
-                  unoptimized
-                />
-                <button
-                  type='button'
-                  onClick={handleRemoveAvatar}
-                  className='absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg'
-                >
-                  <X size={20} className='text-white cursor-pointer' />
-                </button>
-              </div>
-            ) : (
-              <button
-                type='button'
-                onClick={() => fileInputRef.current?.click()}
-                className='flex flex-col items-center justify-center w-full h-64 cursor-pointer rounded-lg border-2 border-dashed border-border hover:border-muted-foreground transition-colors text-muted-foreground hover:text-foreground'
-              >
-                <Upload size={20} />
-                <span className='text-xs mt-1'>Upload</span>
-              </button>
-            )}
-
-            <p className='text-xs text-red-500 min-h-2'>
-              {errors.avatar ? String(errors.avatar.message) : undefined}
-            </p>
-          </div>
-        </div>
-
-        <div className='col-span-1 flex items-center justify-end gap-2 pt-2 mt-5'>
-          <Button
-            className='bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 cursor-pointer'
-            type='submit'
+          <ImagePickerField
+            id='avatar'
+            label='Avatar'
+            hint='JPG, PNG, WEBP — max 2 MB'
+            required={!isEdit}
+            heightClass='h-64'
+            preview={avatarUrl ?? savedAvatarUrl}
+            isNewPick={avatar instanceof File}
+            error={errors.avatar?.message}
             disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Spinner size='sm' className='text-white' />
-                {isEdit ? 'Saving…' : 'Creating…'}
-              </>
-            ) : isEdit ? (
-              'Save Changes'
-            ) : (
-              'Create User'
-            )}
-          </Button>
-          <Button
-            type='button'
-            className='cursor-pointer bg-gray-400 text-white hover:bg-gray-500'
-            onClick={resetForm}
-          >
-            <RefreshCwIcon size={14} />
-            Reset
-          </Button>
-          <Button
-            className='cursor-pointer'
-            type='button'
-            variant='outline'
-            onClick={() => router.push('/admin/users')}
-          >
-            Back
-          </Button>
+            onPick={pickAvatar}
+            onCancel={cancelAvatar}
+          />
         </div>
-      </form>
-    </div>
+      </div>
+
+      <AdminFormActions
+        isEdit={isEdit}
+        createLabel='Create User'
+        isSubmitting={isSubmitting}
+        // A picked File counts even where react-hook-form's comparison would not.
+        isDirty={isDirty || avatar instanceof File}
+        onBack={() => router.push('/admin/users')}
+        onDiscard={discardChanges}
+      />
+    </form>
   );
 }

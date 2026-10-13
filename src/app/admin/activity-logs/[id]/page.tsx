@@ -1,8 +1,9 @@
+import type { Metadata } from 'next';
 import PageHeader from '@/components/ui/PageHeader';
 import PermissionGuard from '@/components/layout/admin/PermissionGuard';
 import DetailActivityLog from '@/components/admin/activity-logs/DetailView';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Detail Activity Log - Admin Dashboard',
 };
 

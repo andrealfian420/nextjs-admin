@@ -1,8 +1,9 @@
+import type { Metadata } from 'next';
 import PageHeader from '@/components/ui/PageHeader';
 import PermissionGuard from '@/components/layout/admin/PermissionGuard';
 import RoleForm from '@/components/forms/admin/RoleForm';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Edit Role - Admin Dashboard',
 };
 

@@ -1,125 +1,140 @@
 'use client';
 
+import { AdminFormActions } from '@/components/ui/AdminFormActions';
 import { Button } from '@/components/ui/Button';
+import { ImagePickerField } from '@/components/ui/ImagePickerField';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import { LoadFailed } from '@/components/ui/LoadFailed';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from '@/components/ui/Toast';
 import { useLogout } from '@/hooks/useLogout';
+import { useObjectUrl } from '@/hooks/useObjectUrl';
+import { applyApiFieldErrors } from '@/lib/api-errors';
+import { getApiErrorMessage } from '@/lib/utils';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { usePendingToastStore } from '@/store/usePendingToastStore';
-import { User } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, RefreshCwIcon, Upload, X } from 'lucide-react';
-import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
+import type { UserProfile } from '@/types/user';
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const isAcceptedImage = (file: File) =>
+  ACCEPTED_IMAGE_TYPES.includes(file.type) && file.size <= MAX_FILE_SIZE;
 
-const profileSchema = z.object({
+// min 8, has 1 uppercase, 1 number and special character; blank keeps the current password.
+const STRONG_PASSWORD = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+const schema = z.object({
   name: z.string().min(1, 'Full name is required'),
   password: z
     .string()
-    .refine((val) => {
-      if (!val) {
-        return true; // allow empty password (means no change)
-      }
-
-      // min 8, has 1 uppercase, 1 number and special character
-      return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&]{8,}$/.test(
-        val,
-      );
-    }, 'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character')
-    .optional(),
-  avatar: z
-    .any()
-    .optional()
     .refine(
-      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file?.type),
+      (val) => !val || STRONG_PASSWORD.test(val),
+      'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character',
+    ),
+  avatar: z
+    .custom<File | undefined>()
+    .refine(
+      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only JPG, PNG, and WEBP formats are allowed',
     )
     .refine(
-      (file) => !file || file?.size <= MAX_FILE_SIZE,
+      (file) => !file || file.size <= MAX_FILE_SIZE,
       'Avatar size must not exceed 2MB',
     ),
 });
 
+type ProfileFormValues = z.infer<typeof schema>;
+
+const toValues = (profile: UserProfile): ProfileFormValues => ({
+  name: profile.name ?? '',
+  password: '',
+  avatar: undefined,
+});
+
+/**
+ * The signed-in user's own profile. Loads GET /profile itself, so the session store's
+ * background refreshes never overwrite what is being typed. A save becomes the new Discard
+ * baseline and syncs the store; a password change ends every session, so the user is sent to
+ * the login page with a notice.
+ */
 export default function ProfileForm() {
-  // Only used to sync global session state after update (for navbar, permissions, etc.)
+  // Opted out of React Compiler: it memoizes register() calls, but every reset() empties
+  // react-hook-form's mounted-field set that those calls refill, so a later Discard would not
+  // write the restored values back into the inputs.
+  'use no memo';
+
+  const router = useRouter();
+  // Only synced after a save (navbar, permissions); the form never reads from it.
   const setStoreUser = useAuthStore((state) => state.setUser);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Local form data — fetched directly from the API, isolated from the global user store.
-  // This prevents AuthProvider's background re-fetches from interfering with form state.
-  const [profileData, setProfileData] = useState<User | null>(null);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
-  const [isFetching, setIsFetching] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const setPendingToast = usePendingToastStore((state) => state.setPendingToast);
   const { handleLogout } = useLogout();
-  const setPendingToast = usePendingToastStore(
-    (state) => state.setPendingToast,
-  );
-  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
-    };
-  }, []);
-
-  const avatarPreview =
-    localAvatarUrl === 'removed'
-      ? null
-      : (localAvatarUrl ??
-        profileData?.avatarUrl ??
-        profileData?.avatar ??
-        null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
+    control,
     setValue,
     reset,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: '',
-      password: '',
-      avatar: undefined,
-    },
+    setError,
+    getValues,
+    clearErrors,
+    formState: { errors, isDirty, defaultValues },
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: '', password: '', avatar: undefined },
   });
 
+  const avatar = useWatch({ control, name: 'avatar' });
+  const avatarUrl = useObjectUrl(
+    avatar instanceof File && isAcceptedImage(avatar) ? avatar : null,
+  );
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await authService.profile();
-        const data = res.data.data;
-        setProfileData(data);
-        reset({
-          name: data.name ?? '',
-          password: '',
-          avatar: undefined,
-        });
-      } catch {
-        toast.error('Failed to load profile', {
-          description:
-            'Could not load your profile data. Please refresh the page.',
-        });
-      } finally {
-        setIsFetching(false);
-      }
+    let active = true;
+
+    authService
+      .profile()
+      .then((res) => {
+        if (!active) return;
+        setProfile(res.data.data);
+        reset(toValues(res.data.data));
+      })
+      .catch(() => {
+        if (active) setFailed(true);
+      });
+
+    return () => {
+      active = false;
     };
+  }, [reset, attempt]);
 
-    fetchProfile();
-  }, [reset]);
+  if (failed) {
+    return (
+      <LoadFailed
+        message='Failed to load your profile.'
+        onRetry={() => {
+          setFailed(false);
+          setAttempt((n) => n + 1);
+        }}
+      />
+    );
+  }
 
-  if (isFetching) {
+  if (!profile) {
     return (
       <div className='flex justify-center items-center py-20'>
         <Spinner />
@@ -127,116 +142,63 @@ export default function ProfileForm() {
     );
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // An invalid file is kept only so the schema can report it; it never gets a preview.
+  const pickAvatar = (file: File) =>
+    setValue('avatar', file, { shouldValidate: true, shouldDirty: true });
 
-    setValue('avatar', file, { shouldValidate: true });
-
-    if (
-      ACCEPTED_IMAGE_TYPES.includes(file.type) &&
-      file.size <= MAX_FILE_SIZE
-    ) {
-      if (localAvatarUrl?.startsWith('blob:')) {
-        URL.revokeObjectURL(localAvatarUrl);
-      }
-      setLocalAvatarUrl(URL.createObjectURL(file));
-    } else {
-      setLocalAvatarUrl(null);
-    }
+  // Drops the new pick only: the stored avatar comes back and is never deleted.
+  const cancelAvatar = () => {
+    setValue('avatar', undefined, { shouldDirty: true });
+    clearErrors('avatar');
   };
 
-  const handleRemoveAvatar = () => {
-    if (localAvatarUrl?.startsWith('blob:')) {
-      URL.revokeObjectURL(localAvatarUrl);
-    }
-
-    setValue('avatar', undefined, { shouldValidate: false });
-    setLocalAvatarUrl('removed');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const onSubmit = async (data: z.infer<typeof profileSchema>) => {
+  const onSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
     setIsSubmitting(true);
     try {
-      const payload = new FormData();
-      payload.append('name', data.name);
+      const res = await authService.updateProfile(data);
 
       if (data.password) {
-        payload.append('password', data.password);
-      }
-
-      if (data.avatar instanceof File) {
-        payload.append('avatar', data.avatar);
-      }
-
-      const res = await authService.updateProfile(payload);
-
-      if (data.password) {
-        // Password was changed — API has invalidated all tokens.
-        // Set a pending toast before logout so it shows on the login page.
+        // The backend revoked every session; the notice survives the redirect to /login.
         setPendingToast({
           type: 'info',
           title: 'Password Changed',
           description: 'Your password has been updated. Please sign in again.',
         });
-
-        redirectTimerRef.current = setTimeout(async () => {
-          await handleLogout();
-        }, 2000);
+        // Stays submitting until the logout navigates away.
+        await handleLogout('PROFILE_PASSWORD_CHANGED');
         return;
       }
 
       const updated = res.data.data;
-
-      // Update local form data source
-      setProfileData(updated);
-
-      // Clear local avatar override — the server-returned URL will now show
-      setLocalAvatarUrl(null);
-
-      // Sync global store so navbar/permissions stay up to date
+      setProfile(updated);
+      // The saved profile is the new Discard baseline. This also drops the uploaded file, now
+      // the stored avatar, so it is not sent again.
+      reset(toValues(updated), { keepFieldsRef: true });
       setStoreUser(updated);
 
       toast.success('Success', {
         description: 'Profile updated successfully!',
       });
-
       setIsSubmitting(false);
     } catch (err: unknown) {
-      const errObj = err as { response?: { data?: { message?: string } } };
-      const message =
-        errObj.response?.data?.message ||
-        'An error occurred. Please try again.';
-      toast.error('Failed to update profile', {
-        description: message,
+      const { applied, description } = applyApiFieldErrors(err, {
+        setError,
+        getValues,
       });
 
+      toast.error('Failed to update profile', {
+        description: applied.length ? description : getApiErrorMessage(err),
+      });
       setIsSubmitting(false);
     }
   };
 
-  const resetForm = () => {
-    reset({
-      name: profileData?.name ?? '',
-      password: '',
-      avatar: undefined,
-    });
-    if (localAvatarUrl?.startsWith('blob:')) {
-      URL.revokeObjectURL(localAvatarUrl);
-    }
-    // Clear local override so avatarPreview falls back to server URL
-    setLocalAvatarUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
+  const discardChanges = () =>
+    reset(defaultValues as ProfileFormValues, { keepFieldsRef: true });
 
   return (
-    <div className='bg-white dark:bg-zinc-800 p-4 rounded-lg'>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <div className='bg-white dark:bg-zinc-800 p-4 rounded-lg'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           <div className='space-y-1.5'>
             <Label htmlFor='name'>
@@ -260,11 +222,12 @@ export default function ProfileForm() {
             <Input
               id='email'
               type='email'
-              value={profileData?.email ?? ''}
+              value={profile.email}
               readOnly
+              aria-describedby='email-hint'
               className='bg-zinc-50 dark:bg-zinc-700 cursor-not-allowed'
             />
-            <p className='text-xs text-muted-foreground min-h-2'>
+            <p id='email-hint' className='text-xs text-muted-foreground min-h-2'>
               Email cannot be changed.
             </p>
           </div>
@@ -281,6 +244,7 @@ export default function ProfileForm() {
                 id='password'
                 type={isPasswordVisible ? 'text' : 'password'}
                 placeholder='••••••••'
+                autoComplete='new-password'
                 aria-invalid={!!errors.password}
                 {...register('password')}
               />
@@ -288,7 +252,8 @@ export default function ProfileForm() {
                 type='button'
                 size='icon-sm'
                 variant='ghost'
-                className='absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground'
+                aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+                className='absolute right-1 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground'
                 onClick={() => setIsPasswordVisible((v) => !v)}
               >
                 {isPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -299,79 +264,29 @@ export default function ProfileForm() {
             </p>
           </div>
 
-          <div className='space-y-1.5'>
-            <Label>Avatar</Label>
-            <p className='text-xs text-muted-foreground -mt-1'>
-              JPG, PNG, WEBP — max 2 MB
-            </p>
-
-            <input
-              ref={fileInputRef}
-              type='file'
-              accept='.jpg,.jpeg,.png,.webp'
-              className='hidden'
-              onChange={handleAvatarChange}
-            />
-
-            {avatarPreview ? (
-              <div className='relative w-full h-64 rounded-lg overflow-hidden border border-border group cursor-pointer'>
-                <Image
-                  src={avatarPreview}
-                  alt='Avatar preview'
-                  fill
-                  className='object-cover'
-                  unoptimized
-                />
-                <button
-                  type='button'
-                  onClick={handleRemoveAvatar}
-                  className='absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg'
-                >
-                  <X size={20} className='text-white cursor-pointer' />
-                </button>
-              </div>
-            ) : (
-              <button
-                type='button'
-                onClick={() => fileInputRef.current?.click()}
-                className='flex flex-col items-center justify-center w-full h-64 cursor-pointer rounded-lg border-2 border-dashed border-border hover:border-muted-foreground transition-colors text-muted-foreground hover:text-foreground'
-              >
-                <Upload size={20} />
-                <span className='text-xs mt-1'>Upload</span>
-              </button>
-            )}
-
-            <p className='text-xs text-red-500 min-h-2'>
-              {errors.avatar ? String(errors.avatar.message) : undefined}
-            </p>
-          </div>
-        </div>
-
-        <div className='col-span-1 flex items-center justify-end gap-2 pt-2 mt-5'>
-          <Button
-            className='bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 cursor-pointer'
-            type='submit'
+          <ImagePickerField
+            id='avatar'
+            label='Avatar'
+            hint='JPG, PNG, WEBP — max 2 MB'
+            heightClass='h-64'
+            preview={avatarUrl ?? profile.avatarUrl ?? null}
+            isNewPick={avatar instanceof File}
+            error={errors.avatar?.message}
             disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Spinner size='sm' className='text-white' />
-                Saving…
-              </>
-            ) : (
-              'Save Changes'
-            )}
-          </Button>
-          <Button
-            type='button'
-            className='cursor-pointer bg-gray-400 text-white hover:bg-gray-500'
-            onClick={resetForm}
-          >
-            <RefreshCwIcon size={14} />
-            Reset
-          </Button>
+            onPick={pickAvatar}
+            onCancel={cancelAvatar}
+          />
         </div>
-      </form>
-    </div>
+      </div>
+
+      <AdminFormActions
+        isEdit
+        isSubmitting={isSubmitting}
+        // A picked File counts even where react-hook-form's comparison would not.
+        isDirty={isDirty || avatar instanceof File}
+        onBack={() => router.push('/admin')}
+        onDiscard={discardChanges}
+      />
+    </form>
   );
 }

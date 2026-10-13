@@ -15,10 +15,6 @@ export function toUserFormData(input: UserInput): FormData {
   return payload;
 }
 
-// FormData is accepted until every caller passes UserInput.
-const toBody = (data: UserInput | FormData) =>
-  data instanceof FormData ? data : toUserFormData(data);
-
 export const userService = {
   async getUsers(params?: PaginationParams): Promise<PaginatedResponse<UserRow>> {
     const res = await api.get('/users', { params: toListParams(params) });
@@ -30,16 +26,16 @@ export const userService = {
     return res.data;
   },
 
-  async createUser(data: UserInput | FormData): Promise<ApiResponse<UserDetail>> {
-    const res = await api.post('/users', toBody(data));
+  async createUser(data: UserInput): Promise<ApiResponse<UserDetail>> {
+    const res = await api.post('/users', toUserFormData(data));
     return res.data;
   },
 
   async updateUser(
     slug: string,
-    data: UserInput | FormData,
+    data: UserInput,
   ): Promise<ApiResponse<UserDetail>> {
-    const res = await api.put(`/users/${encodeURIComponent(slug)}`, toBody(data));
+    const res = await api.put(`/users/${encodeURIComponent(slug)}`, toUserFormData(data));
     return res.data;
   },
 

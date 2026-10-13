@@ -86,12 +86,6 @@ describe('userService payloads', () => {
     expect(api.put).toHaveBeenCalledWith('/users/ann', expect.any(FormData));
     expect(Object.keys(sentBody('put')).sort()).toEqual(['email', 'name', 'roleId']);
   });
-
-  it('passes a prebuilt FormData through unchanged', async () => {
-    const payload = new FormData();
-    await userService.updateUser('ann', payload);
-    expect(vi.mocked(api.put).mock.calls[0][1]).toBe(payload);
-  });
 });
 
 describe('roleService', () => {

@@ -40,10 +40,6 @@ export const authService = {
 
   profile: () => api.get<ApiResponse<UserProfile>>('/profile'),
 
-  // FormData is accepted until every caller passes ProfileInput.
-  updateProfile: (data: ProfileInput | FormData) =>
-    api.put<ApiResponse<UserProfile>>(
-      '/profile',
-      data instanceof FormData ? data : toProfileFormData(data),
-    ),
+  updateProfile: (data: ProfileInput) =>
+    api.put<ApiResponse<UserProfile>>('/profile', toProfileFormData(data)),
 };

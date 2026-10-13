@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { logService } from '@/services/logService';
-import { isAxiosError } from 'axios';
+import { isNotFoundError } from '@/lib/api-errors';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
-import { toast } from '@/components/ui/Toast';
+import { LoadFailed } from '@/components/ui/LoadFailed';
 import type { ActivityLog } from '@/types';
 
 const ACTION_VARIANTS = {
@@ -55,6 +55,38 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+// Primitives as text, a list of primitives as a list, anything nested as indented JSON.
+function FieldValue({ value }: { value: unknown }) {
+  if (value === null || value === undefined) {
+    return <span className='italic text-zinc-400 dark:text-zinc-500'>null</span>;
+  }
+
+  const isPrimitive = (v: unknown) => v === null || typeof v !== 'object';
+
+  if (Array.isArray(value) && value.every(isPrimitive)) {
+    if (value.length === 0) {
+      return <span className='italic text-zinc-400 dark:text-zinc-500'>empty</span>;
+    }
+    return (
+      <ul className='list-disc list-inside text-sm'>
+        {value.map((item, idx) => (
+          <li key={idx}>{String(item)}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (typeof value === 'object') {
+    return (
+      <pre className='text-xs whitespace-pre-wrap break-all font-mono'>
+        {JSON.stringify(value, null, 2)}
+      </pre>
+    );
+  }
+
+  return <>{String(value)}</>;
+}
+
 function DataComparisonTable({
   oldData,
   newData,
@@ -73,30 +105,6 @@ function DataComparisonTable({
       </p>
     );
   }
-
-  const formatValue = (val: unknown): React.ReactNode => {
-    if (val === null || val === undefined) {
-      return (
-        <span className='italic text-zinc-400 dark:text-zinc-500'>null</span>
-      );
-    }
-
-    if (Array.isArray(val)) {
-      return (
-        <ul className='list-disc list-inside text-sm'>
-          {val.map((item: unknown, idx: number) => (
-            <li key={idx}>{String(item)}</li>
-          ))}
-        </ul>
-      );
-    }
-
-    if (typeof val === 'object') {
-      return <code className='text-xs'>{JSON.stringify(val)}</code>;
-    }
-
-    return String(val);
-  };
 
   return (
     <div className='overflow-x-auto'>
@@ -130,12 +138,12 @@ function DataComparisonTable({
                   {key}
                 </td>
                 <td className='py-2.5 px-3 text-zinc-700 dark:text-zinc-300 break-all'>
-                  {formatValue(oldVal)}
+                  <FieldValue value={oldVal} />
                 </td>
                 <td
                   className={`py-2.5 px-3 break-all ${changed ? 'font-medium text-zinc-900 dark:text-zinc-100' : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
-                  {formatValue(newVal)}
+                  <FieldValue value={newVal} />
                 </td>
               </tr>
             );
@@ -148,38 +156,47 @@ function DataComparisonTable({
 
 export default function DetailActivityLog() {
   const { id } = useParams<{ id: string }>();
-  const [log, setLog] = useState<ActivityLog | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isNotFound, setIsNotFound] = useState(false);
   const router = useRouter();
+  const [log, setLog] = useState<ActivityLog | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'missing' | 'failed'>(
+    'loading',
+  );
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    const fetchLog = async () => {
-      try {
-        const res = await logService.getActivityLog(id);
+    let active = true;
+
+    logService
+      .getActivityLog(id)
+      .then((res) => {
+        if (!active) return;
         setLog(res.data);
-      } catch (err: unknown) {
-        if (isAxiosError(err) && err.response?.status === 404) {
-          setIsNotFound(true);
-          return;
-        }
-        toast.error('Failed to load log', {
-          description: 'The log entry could not be loaded.',
-        });
-        router.push('/admin/activity-logs');
-      } finally {
-        setLoading(false);
-      }
+        setStatus('ready');
+      })
+      .catch((err: unknown) => {
+        if (active) setStatus(isNotFoundError(err) ? 'missing' : 'failed');
+      });
+
+    return () => {
+      active = false;
     };
+  }, [id, attempt]);
 
-    fetchLog();
-  }, [id, router]);
+  if (status === 'missing') notFound();
 
-  if (isNotFound) {
-    notFound();
+  if (status === 'failed') {
+    return (
+      <LoadFailed
+        message='Failed to load the log entry.'
+        onRetry={() => {
+          setStatus('loading');
+          setAttempt((n) => n + 1);
+        }}
+      />
+    );
   }
 
-  if (loading) {
+  if (status === 'loading' || !log) {
     return (
       <div className='flex flex-col gap-4'>
         <div className='bg-white dark:bg-zinc-800 rounded-lg p-5'>
@@ -202,13 +219,8 @@ export default function DetailActivityLog() {
     );
   }
 
-  if (!log) {
-    return null;
-  }
-
   const oldData = asRecord(log.oldData);
   const newData = asRecord(log.newData);
-  const hasChanges = oldData || newData;
 
   return (
     <div className='flex flex-col gap-4'>
@@ -221,31 +233,31 @@ export default function DetailActivityLog() {
             <ActionBadge action={log.action ?? '—'} />
           </InfoRow>
           <InfoRow label='Subject Type'>{log.subjectType ?? '—'}</InfoRow>
-          <InfoRow label='Description'>{log.description}</InfoRow>
+          <InfoRow label='Description'>{log.description ?? '—'}</InfoRow>
           <InfoRow label='Caused By'>{log.user?.name ?? '—'}</InfoRow>
           <InfoRow label='Caused At'>{log.causedAt}</InfoRow>
         </dl>
       </div>
 
-      {hasChanges && (
+      {(oldData || newData) && (
         <div className='bg-white dark:bg-zinc-800 rounded-lg p-5'>
           <h2 className='text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-3'>
             Data Changes
           </h2>
           <DataComparisonTable oldData={oldData} newData={newData} />
-
-          <div className='flex items-center justify-end mb-4 mt-6'>
-            <Button
-              onClick={() => router.push('/admin/activity-logs')}
-              variant='outline'
-              size='sm'
-              className='ml-2 cursor-pointer'
-            >
-              Back to Logs
-            </Button>
-          </div>
         </div>
       )}
+
+      <div className='flex justify-end'>
+        <Button
+          onClick={() => router.push('/admin/activity-logs')}
+          variant='outline'
+          size='sm'
+          className='cursor-pointer'
+        >
+          Back to Logs
+        </Button>
+      </div>
     </div>
   );
 }

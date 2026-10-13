@@ -125,3 +125,7 @@ function describe(applied: ApiFieldError[], unmatched: ApiFieldError[]): string 
   if (applied.length === 1) return '1 field needs attention.';
   return `${applied.length} fields need attention.`;
 }
+
+/** The backend answered 404: the record does not exist (as opposed to a failed request). */
+export const isNotFoundError = (err: unknown): boolean =>
+  isAxiosError(err) && err.response?.status === 404;

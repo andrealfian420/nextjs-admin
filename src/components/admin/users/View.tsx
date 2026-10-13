@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
 import DataTable from '@/components/ui/DataTable/DataTable';
+import { SortHeader } from '@/components/ui/DataTable/SortHeader';
 import DeleteDialog from '@/components/ui/DeleteDialog';
 import {
   Tooltip,
@@ -10,49 +10,13 @@ import {
   TooltipTrigger,
 } from '@/components/ui/Tooltip';
 import { toast } from '@/components/ui/Toast';
+import { getApiErrorMessage } from '@/lib/utils';
 import { userService } from '@/services/userService';
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Pencil,
-  Plus,
-  Trash2,
-} from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import Can from '@/components/layout/admin/Can';
-import type { Column, ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { UserRow } from '@/types';
-
-function SortHeader({
-  column,
-  label,
-}: {
-  column: Column<UserRow, unknown>;
-  label: string;
-}) {
-  const sorted = column.getIsSorted();
-  const isActive = !!sorted;
-  return (
-    <button
-      onClick={() => column.toggleSorting()}
-      className={`flex items-center gap-1 transition-colors ${
-        isActive
-          ? 'text-blue-600 dark:text-blue-400'
-          : 'hover:text-zinc-700 dark:hover:text-zinc-200'
-      }`}
-    >
-      {label}
-      {sorted === 'asc' ? (
-        <ArrowUp size={12} className='text-blue-600 dark:text-blue-400' />
-      ) : sorted === 'desc' ? (
-        <ArrowDown size={12} className='text-blue-600 dark:text-blue-400' />
-      ) : (
-        <ArrowUpDown size={12} className='text-zinc-400 dark:text-zinc-600' />
-      )}
-    </button>
-  );
-}
 
 function PageActions() {
   return (
@@ -80,8 +44,8 @@ function RowActions({
       <Can permission='module.master-data.user.edit'>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href={`/admin/users/${row.slug}`}>
-              <Pencil size={14} />
+            <Link href={`/admin/users/${row.slug}`} aria-label='Edit user'>
+              <Pencil size={14} aria-hidden />
             </Link>
           </TooltipTrigger>
           <TooltipContent className='[&_svg]:hidden! bg-zinc-700 text-white hover:text-zinc-200'>
@@ -93,13 +57,14 @@ function RowActions({
       <Can permission='module.master-data.user.delete'>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link
-              href='#!'
+            <button
+              type='button'
+              aria-label='Delete user'
               className='cursor-pointer hover:text-red-600 dark:hover:text-red-400'
               onClick={() => onDeleteClick(row)}
             >
-              <Trash2 size={14} />
-            </Link>
+              <Trash2 size={14} aria-hidden />
+            </button>
           </TooltipTrigger>
           <TooltipContent className='[&_svg]:hidden! bg-zinc-700 text-white'>
             Delete
@@ -113,8 +78,7 @@ function RowActions({
 const tableColumns: ColumnDef<UserRow, unknown>[] = [
   {
     accessorKey: 'name',
-    // header: 'Name'
-    header: ({ column }) => <SortHeader column={column} label='Name' />, // if you need to sort
+    header: ({ column }) => <SortHeader column={column} label='Name' />,
   },
   {
     accessorKey: 'email',
@@ -134,19 +98,20 @@ export default function ViewUsers() {
   const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleDelete = async (row: unknown) => {
-    const userRow = row as UserRow;
+  // A failure is reported, then rethrown so the dialog stays open for a retry.
+  const handleDelete = async (row: UserRow) => {
     try {
-      await userService.deleteUser(userRow.slug);
-      setRefreshKey((key) => key + 1);
-      toast.success('Delete Successful', {
-        description: `${userRow.name} has been removed.`,
-      });
-    } catch (error: unknown) {
+      await userService.deleteUser(row.slug);
+    } catch (err: unknown) {
       toast.error('Delete Failed', {
-        description: `Failed to delete ${userRow.name}.`,
+        description: getApiErrorMessage(err, `Failed to delete ${row.name}.`),
       });
+      throw err;
     }
+    setRefreshKey((key) => key + 1);
+    toast.success('Delete Successful', {
+      description: `${row.name} has been removed.`,
+    });
   };
 
   return (

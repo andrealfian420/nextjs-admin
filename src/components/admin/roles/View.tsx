@@ -10,48 +10,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/Tooltip';
 import { toast } from '@/components/ui/Toast';
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Pencil,
-  Plus,
-  Trash2,
-} from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/utils';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import Can from '@/components/layout/admin/Can';
-import type { Column, ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { RoleRow } from '@/types';
-
-function SortHeader({
-  column,
-  label,
-}: {
-  column: Column<RoleRow, unknown>;
-  label: string;
-}) {
-  const sorted = column.getIsSorted();
-  const isActive = !!sorted;
-  return (
-    <button
-      onClick={() => column.toggleSorting()}
-      className={`flex items-center gap-1 transition-colors ${
-        isActive
-          ? 'text-blue-600 dark:text-blue-400'
-          : 'hover:text-zinc-700 dark:hover:text-zinc-200'
-      }`}
-    >
-      {label}
-      {sorted === 'asc' ? (
-        <ArrowUp size={12} className='text-blue-600 dark:text-blue-400' />
-      ) : sorted === 'desc' ? (
-        <ArrowDown size={12} className='text-blue-600 dark:text-blue-400' />
-      ) : (
-        <ArrowUpDown size={12} className='text-zinc-400 dark:text-zinc-600' />
-      )}
-    </button>
-  );
-}
 
 function PageActions() {
   return (
@@ -79,8 +43,8 @@ function RowActions({
       <Can permission='module.master-data.role.edit'>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href={`/admin/roles/${row.slug}`}>
-              <Pencil size={14} />
+            <Link href={`/admin/roles/${row.slug}`} aria-label='Edit role'>
+              <Pencil size={14} aria-hidden />
             </Link>
           </TooltipTrigger>
           <TooltipContent className='[&_svg]:hidden! bg-zinc-700 text-white hover:text-zinc-200'>
@@ -92,13 +56,14 @@ function RowActions({
       <Can permission='module.master-data.role.delete'>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link
-              href='#!'
+            <button
+              type='button'
+              aria-label='Delete role'
               className='cursor-pointer hover:text-red-600 dark:hover:text-red-400'
               onClick={() => onDeleteClick(row)}
             >
-              <Trash2 size={14} />
-            </Link>
+              <Trash2 size={14} aria-hidden />
+            </button>
           </TooltipTrigger>
           <TooltipContent className='[&_svg]:hidden! bg-zinc-700 text-white'>
             Delete
@@ -112,8 +77,12 @@ function RowActions({
 const tableColumns: ColumnDef<RoleRow, unknown>[] = [
   {
     accessorKey: 'title',
+    // Sortable columns use SortHeader from '@/components/ui/DataTable/SortHeader'.
     header: 'Title',
-    // header: ({ column }) => <SortHeader column={column} label='Title' />, // if you need to sort
+  },
+  {
+    accessorKey: 'userType',
+    header: 'User Type',
   },
   {
     accessorKey: 'description',
@@ -125,33 +94,20 @@ export default function ViewRoles() {
   const [deleteTarget, setDeleteTarget] = useState<RoleRow | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleDelete = async (row: unknown) => {
-    const roleRow = row as RoleRow;
+  // A failure is reported, then rethrown so the dialog stays open for a retry.
+  const handleDelete = async (row: RoleRow) => {
     try {
-      await roleService.deleteRole(roleRow.slug);
-      setRefreshKey((key) => key + 1);
-      toast.success('Delete Successful', {
-        description: `${roleRow.title} has been removed.`,
-      });
-    } catch (error: unknown) {
-      let msg = 'An error occurred while deleting the role.';
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosErr = error as {
-          response?: { data?: { message?: string } };
-          message?: string;
-        };
-        if (axiosErr.response?.data?.message) {
-          msg = axiosErr.response.data.message;
-        } else if (axiosErr.message) {
-          msg = axiosErr.message;
-        }
-      }
-
+      await roleService.deleteRole(row.slug);
+    } catch (err: unknown) {
       toast.error('Delete Failed', {
-        description: msg,
-        duration: 5000,
+        description: getApiErrorMessage(err, `Failed to delete ${row.title}.`),
       });
+      throw err;
     }
+    setRefreshKey((key) => key + 1);
+    toast.success('Delete Successful', {
+      description: `${row.title} has been removed.`,
+    });
   };
 
   return (

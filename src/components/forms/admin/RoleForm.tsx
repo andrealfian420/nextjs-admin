@@ -1,9 +1,11 @@
 'use client';
 
+import { AdminFormActions } from '@/components/ui/AdminFormActions';
 import { Button } from '@/components/ui/Button';
 import { Checkbox, CheckboxField } from '@/components/ui/Checkbox';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import { LoadFailed } from '@/components/ui/LoadFailed';
 import {
   Select,
   SelectContent,
@@ -14,60 +16,54 @@ import {
 import { Spinner } from '@/components/ui/Spinner';
 import { Textarea } from '@/components/ui/Textarea';
 import { toast } from '@/components/ui/Toast';
+import { applyApiFieldErrors, isNotFoundError } from '@/lib/api-errors';
+import { getApiErrorMessage } from '@/lib/utils';
 import { roleService } from '@/services/roleService';
-import { isAxiosError } from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { RefreshCwIcon } from 'lucide-react';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { useEffect, useMemo, useState } from 'react';
+import { Controller, useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
+import type { PermissionModule } from '@/types/role';
 
-function roleSchema(isEdit = false) {
-  return z.object({
-    title: z.string().min(1, 'Role name is required'),
-    userType: z.string().min(1, 'User type is required'),
-    description: z.string().min(1, 'Description is required'),
-    accesses: z.array(z.string()).optional(),
-  });
-}
+const schema = z.object({
+  title: z.string().min(1, 'Role name is required'),
+  userType: z.string().min(1, 'User type is required'),
+  description: z.string().min(1, 'Description is required'),
+  access: z.array(z.string()),
+});
 
-interface Activity {
-  value: string;
-  label: string;
-}
+type RoleFormValues = z.infer<typeof schema>;
 
-interface SubModule {
-  module: string;
-  activities: Activity[];
-}
+const EMPTY: RoleFormValues = {
+  title: '',
+  userType: '',
+  description: '',
+  access: [],
+};
 
-interface AccessModule {
-  module: string;
-  sub_module: SubModule[];
-}
+/**
+ * Role create/edit form: name, user type (from GET /roles/user-types), description and the
+ * permission matrix. Every access change, bulk actions included, marks the form dirty; Discard
+ * changes restores the loaded role (or the empty form) locally, without a request.
+ */
+export default function RoleForm({ isEdit = false }: { isEdit?: boolean }) {
+  // Opted out of React Compiler: it memoizes register() calls, but every reset() empties
+  // react-hook-form's mounted-field set that those calls refill, so a later Discard would not
+  // write the restored values back into the inputs.
+  'use no memo';
 
-const USER_TYPES = [{ value: 'Administrator', label: 'Administrator' }];
-
-export default function RoleForm({ isEdit = false }) {
-  const params = useParams();
-  const slug = isEdit ? (params?.slug as string) : null;
+  const { slug } = useParams<{ slug?: string }>();
+  const roleSlug = isEdit ? (slug ?? null) : null;
   const router = useRouter();
 
+  const [status, setStatus] = useState<'loading' | 'ready' | 'missing' | 'failed'>(
+    'loading',
+  );
+  const [attempt, setAttempt] = useState(0);
+  const [accessList, setAccessList] = useState<PermissionModule[]>([]);
+  const [userTypes, setUserTypes] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFetchingRole, setIsFetchingRole] = useState(isEdit);
-  const [isFetching, setIsFetching] = useState(false);
-  const [isNotFound, setIsNotFound] = useState(false);
-  const [accessList, setAccessList] = useState<AccessModule[]>([]);
-  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
-    };
-  }, []);
-
-  const schema = roleSchema(isEdit);
 
   const {
     register,
@@ -75,19 +71,15 @@ export default function RoleForm({ isEdit = false }) {
     control,
     setValue,
     getValues,
+    setError,
     reset,
-    formState: { errors },
-  } = useForm({
+    formState: { errors, isDirty, defaultValues },
+  } = useForm<RoleFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      title: '',
-      userType: '',
-      description: '',
-      accesses: [],
-    },
+    defaultValues: EMPTY,
   });
 
-  const watchedAccesses = useWatch({ control, name: 'accesses' }) ?? [];
+  const watchedAccess = useWatch({ control, name: 'access' });
 
   const allAccessValues = useMemo(
     () =>
@@ -97,70 +89,58 @@ export default function RoleForm({ isEdit = false }) {
     [accessList],
   );
 
-  const accessBtnLabel = useMemo(() => {
-    if (!allAccessValues.length) {
-      return 'Select All';
-    }
-    return allAccessValues.every((v) => watchedAccesses.includes(v))
-      ? 'Deselect All'
-      : 'Select All';
-  }, [allAccessValues, watchedAccesses]);
+  const allSelected =
+    allAccessValues.length > 0 &&
+    allAccessValues.every((v) => (watchedAccess ?? []).includes(v));
 
+  // The catalogues and (on edit) the role load together: the form is useless without them.
   useEffect(() => {
-    if (!slug) {
-      return;
-    }
+    let active = true;
 
-    setIsFetchingRole(true);
-
-    const fetchData = async () => {
-      try {
-        const res = await roleService.getRole(slug);
-        const role = res.data;
-
-        reset({
-          title: role.title ?? '',
-          userType: role.userType ?? '',
-          description: role.description ?? '',
-          accesses: role.access ?? [],
-        });
-      } catch (err: unknown) {
-        if (isAxiosError(err) && err.response?.status === 404) {
-          setIsNotFound(true);
-          return;
+    Promise.all([
+      roleService.getAccessList(),
+      roleService.getUserTypes(),
+      roleSlug ? roleService.getRole(roleSlug) : null,
+    ])
+      .then(([access, types, detail]) => {
+        if (!active) return;
+        setAccessList(access.data ?? []);
+        setUserTypes(types.data ?? []);
+        if (detail) {
+          const role = detail.data;
+          reset({
+            title: role.title ?? '',
+            userType: role.userType ?? '',
+            description: role.description ?? '',
+            access: role.access ?? [],
+          });
         }
-      } finally {
-        setIsFetchingRole(false);
-      }
+        setStatus('ready');
+      })
+      .catch((err: unknown) => {
+        if (active) setStatus(isNotFoundError(err) ? 'missing' : 'failed');
+      });
+
+    return () => {
+      active = false;
     };
+  }, [roleSlug, reset, attempt]);
 
-    fetchData();
-  }, [slug, reset]);
+  if (status === 'missing') notFound();
 
-  useEffect(() => {
-    setIsFetching(true);
-
-    const fetchAccessList = async () => {
-      try {
-        const res = await roleService.getAccessList();
-        setAccessList(res.data);
-      } catch (err: unknown) {
-        toast.error('Error', {
-          description: 'Failed to load access list.',
-        });
-      } finally {
-        setIsFetching(false);
-      }
-    };
-
-    fetchAccessList();
-  }, []);
-
-  if (isNotFound) {
-    notFound();
+  if (status === 'failed') {
+    return (
+      <LoadFailed
+        message={isEdit ? 'Failed to load the role.' : 'Failed to load the role options.'}
+        onRetry={() => {
+          setStatus('loading');
+          setAttempt((n) => n + 1);
+        }}
+      />
+    );
   }
 
-  if (isFetching || isFetchingRole) {
+  if (status === 'loading') {
     return (
       <div className='flex justify-center items-center py-20'>
         <Spinner />
@@ -168,21 +148,13 @@ export default function RoleForm({ isEdit = false }) {
     );
   }
 
-  const onSubmit = async (data: z.infer<ReturnType<typeof roleSchema>>) => {
+  const onSubmit: SubmitHandler<RoleFormValues> = async (data) => {
     setIsSubmitting(true);
     try {
-      // json payload to send to API
-      const payload = {
-        title: data.title,
-        userType: data.userType,
-        description: data.description,
-        access: data.accesses ?? [],
-      };
-
-      if (isEdit) {
-        await roleService.updateRole(slug!, payload);
+      if (roleSlug) {
+        await roleService.updateRole(roleSlug, data);
       } else {
-        await roleService.createRole(payload);
+        await roleService.createRole(data);
       }
 
       toast.success('Success', {
@@ -191,71 +163,37 @@ export default function RoleForm({ isEdit = false }) {
           : 'Role created successfully!',
       });
 
-      redirectTimerRef.current = setTimeout(() => {
-        setIsSubmitting(false);
-        router.push('/admin/roles');
-      }, 2000);
+      // The toaster lives in the root layout, so the notice stays visible on the list.
+      router.push('/admin/roles');
     } catch (err: unknown) {
       setIsSubmitting(false);
-      let message = 'An error occurred. Please try again.';
+      const { applied, description } = applyApiFieldErrors(err, {
+        setError,
+        getValues,
+      });
 
-      const errObj = err as { response?: { data?: { message?: string } } };
-      if (errObj.response?.data?.message) {
-        message = errObj.response.data.message;
-      }
-
-      const toastMessage = `Failed to ${isEdit ? 'update' : 'create'} role.`;
-
-      toast.error(toastMessage, {
-        description: message,
+      toast.error(`Failed to ${isEdit ? 'update' : 'create'} role.`, {
+        description: applied.length ? description : getApiErrorMessage(err),
         position: 'top-right',
       });
     }
   };
 
-  const resetForm = async () => {
-    if (!isEdit) {
-      reset({
-        title: '',
-        userType: '',
-        description: '',
-        accesses: [],
-      });
-    } else {
-      setIsFetchingRole(true);
+  // Back to the loaded role (edit) or the empty form (create). Passing the baseline skips the
+  // native form reset that the Radix checkboxes listen to; keepFieldsRef keeps the inputs
+  // registered.
+  const discardChanges = () =>
+    reset(defaultValues as RoleFormValues, { keepFieldsRef: true });
 
-      try {
-        const res = await roleService.getRole(slug!);
-        const role = res.data;
-        reset({
-          title: role.title ?? '',
-          userType: role.userType ?? '',
-          description: role.description ?? '',
-          accesses: role.access ?? [],
-        });
-      } catch (error: unknown) {
-        toast.error('Error', {
-          description: 'Failed to reset form.',
-        });
-      } finally {
-        setIsFetchingRole(false);
-      }
-    }
-  };
+  // shouldDirty: the bulk access actions are user changes, like ticking a checkbox.
+  const handleToggleAll = () =>
+    setValue('access', allSelected ? [] : allAccessValues, { shouldDirty: true });
 
-  const handleToggleAll = () => {
-    const current = getValues('accesses') ?? [];
-    const allSelected = allAccessValues.every((v) => current.includes(v));
-    setValue('accesses', allSelected ? [] : allAccessValues);
-  };
-
-  const handleResetAccess = () => {
-    setValue('accesses', []);
-  };
+  const handleResetAccess = () => setValue('access', [], { shouldDirty: true });
 
   return (
-    <div className='bg-white dark:bg-zinc-800 p-4 rounded-lg'>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <div className='bg-white dark:bg-zinc-800 p-4 rounded-lg'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           <div className='space-y-1.5'>
             <Label htmlFor='title'>
@@ -263,7 +201,7 @@ export default function RoleForm({ isEdit = false }) {
               <span className='text-red-500 ml-0.5'>*</span>
             </Label>
             <Input
-              id='name'
+              id='title'
               type='text'
               placeholder='Enter Role Name'
               aria-invalid={!!errors.title}
@@ -292,13 +230,9 @@ export default function RoleForm({ isEdit = false }) {
                     <SelectValue placeholder='Select a user type' />
                   </SelectTrigger>
                   <SelectContent position='popper'>
-                    {USER_TYPES.map((type) => (
-                      <SelectItem
-                        key={type.value}
-                        value={String(type.value)}
-                        className='cursor-pointer'
-                      >
-                        {type.label}
+                    {userTypes.map((type) => (
+                      <SelectItem key={type} value={type} className='cursor-pointer'>
+                        {type}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -310,7 +244,7 @@ export default function RoleForm({ isEdit = false }) {
             </p>
           </div>
 
-          <div className='space-y-1.5 col-span-2'>
+          <div className='space-y-1.5 md:col-span-2'>
             <Label htmlFor='description'>
               Description
               <span className='text-red-500 ml-0.5'>*</span>
@@ -319,17 +253,15 @@ export default function RoleForm({ isEdit = false }) {
               id='description'
               placeholder='Enter Description'
               aria-invalid={!!errors.description}
-              {...(register(
-                'description',
-              ) as unknown as React.ComponentProps<'textarea'>)}
+              {...register('description')}
             />
             <p className='text-xs text-red-500 min-h-2'>
               {errors.description?.message}
             </p>
           </div>
 
-          <div className='space-y-1.5 col-span-2'>
-            <h6 className='text-sm font-medium'>Access Rights</h6>
+          <div className='space-y-1.5 md:col-span-2'>
+            <h2 className='text-sm font-medium'>Access Rights</h2>
 
             <div className='flex gap-2'>
               <Button
@@ -339,7 +271,7 @@ export default function RoleForm({ isEdit = false }) {
                 className='mb-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700'
                 onClick={handleToggleAll}
               >
-                {accessBtnLabel}
+                {allSelected ? 'Deselect All' : 'Select All'}
               </Button>
               <Button
                 type='button'
@@ -352,7 +284,7 @@ export default function RoleForm({ isEdit = false }) {
             </div>
 
             <Controller
-              name='accesses'
+              name='access'
               control={control}
               render={({ field }) => (
                 <div className='space-y-3'>
@@ -361,7 +293,7 @@ export default function RoleForm({ isEdit = false }) {
                       s.activities.map((a) => a.value),
                     );
                     const checkedCount = moduleValues.filter((v) =>
-                      (field.value ?? []).includes(v),
+                      field.value.includes(v),
                     ).length;
                     const isModuleAll =
                       checkedCount === moduleValues.length &&
@@ -372,7 +304,7 @@ export default function RoleForm({ isEdit = false }) {
                     return (
                       <div
                         key={module.module}
-                        className={`border border-zinc-200 dark:border-zinc-700 rounded-lg overflow- ${index !== 0 ? 'mt-5' : ''}`}
+                        className={`border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden ${index !== 0 ? 'mt-5' : ''}`}
                       >
                         {/* Module header */}
                         <div className='flex items-center gap-2.5 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-700'>
@@ -381,13 +313,11 @@ export default function RoleForm({ isEdit = false }) {
                             checked={isModuleAll}
                             indeterminate={isModuleIndeterminate}
                             onCheckedChange={(checked) => {
-                              const current = field.value ?? [];
-                              const updated = checked
-                                ? [...new Set([...current, ...moduleValues])]
-                                : current.filter(
-                                    (v) => !moduleValues.includes(v),
-                                  );
-                              field.onChange(updated);
+                              field.onChange(
+                                checked
+                                  ? [...new Set([...field.value, ...moduleValues])]
+                                  : field.value.filter((v) => !moduleValues.includes(v)),
+                              );
                             }}
                           />
                           <label
@@ -401,11 +331,9 @@ export default function RoleForm({ isEdit = false }) {
                         {/* Sub-modules */}
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px'>
                           {module.sub_module.map((sub) => {
-                            const subValues = sub.activities.map(
-                              (a) => a.value,
-                            );
+                            const subValues = sub.activities.map((a) => a.value);
                             const subCheckedCount = subValues.filter((v) =>
-                              (field.value ?? []).includes(v),
+                              field.value.includes(v),
                             ).length;
                             const isSubAll =
                               subCheckedCount === subValues.length &&
@@ -417,31 +345,26 @@ export default function RoleForm({ isEdit = false }) {
                             return (
                               <div
                                 key={sub.module}
-                                className='bg-white dark:bg-zinc-800 p-3 space-y-2 '
+                                className='bg-white dark:bg-zinc-800 p-3 space-y-2'
                               >
                                 {/* Sub-module header */}
                                 <div className='flex items-center gap-2'>
                                   <Checkbox
-                                    id={`sub-${sub.module}`}
+                                    id={`sub-${module.module}-${sub.module}`}
                                     checked={isSubAll}
                                     indeterminate={isSubIndeterminate}
                                     onCheckedChange={(checked) => {
-                                      const current = field.value ?? [];
-                                      const updated = checked
-                                        ? [
-                                            ...new Set([
-                                              ...current,
-                                              ...subValues,
-                                            ]),
-                                          ]
-                                        : current.filter(
-                                            (v) => !subValues.includes(v),
-                                          );
-                                      field.onChange(updated);
+                                      field.onChange(
+                                        checked
+                                          ? [...new Set([...field.value, ...subValues])]
+                                          : field.value.filter(
+                                              (v) => !subValues.includes(v),
+                                            ),
+                                      );
                                     }}
                                   />
                                   <Label
-                                    htmlFor={`sub-${sub.module}`}
+                                    htmlFor={`sub-${module.module}-${sub.module}`}
                                     className='text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 cursor-pointer select-none'
                                   >
                                     {sub.module}
@@ -455,17 +378,15 @@ export default function RoleForm({ isEdit = false }) {
                                       key={activity.value}
                                       id={activity.value}
                                       label={activity.label}
-                                      checked={(field.value ?? []).includes(
-                                        activity.value,
-                                      )}
+                                      checked={field.value.includes(activity.value)}
                                       onCheckedChange={(checked) => {
-                                        const current = field.value ?? [];
-                                        const updated = checked
-                                          ? [...current, activity.value]
-                                          : current.filter(
-                                              (v) => v !== activity.value,
-                                            );
-                                        field.onChange(updated);
+                                        field.onChange(
+                                          checked
+                                            ? [...field.value, activity.value]
+                                            : field.value.filter(
+                                                (v) => v !== activity.value,
+                                              ),
+                                        );
                                       }}
                                     />
                                   ))}
@@ -482,42 +403,16 @@ export default function RoleForm({ isEdit = false }) {
             />
           </div>
         </div>
+      </div>
 
-        <div className='col-span-1 flex items-center justify-end gap-2 pt-2 mt-5'>
-          <Button
-            className='bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 cursor-pointer'
-            type='submit'
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Spinner size='sm' className='text-white' />
-                {isEdit ? 'Saving…' : 'Creating…'}
-              </>
-            ) : isEdit ? (
-              'Save Changes'
-            ) : (
-              'Create Role'
-            )}
-          </Button>
-          <Button
-            type='button'
-            className='cursor-pointer bg-gray-400 text-white hover:bg-gray-500'
-            onClick={resetForm}
-          >
-            <RefreshCwIcon size={14} />
-            Reset
-          </Button>
-          <Button
-            className='cursor-pointer'
-            type='button'
-            variant='outline'
-            onClick={() => router.push('/admin/roles')}
-          >
-            Back
-          </Button>
-        </div>
-      </form>
-    </div>
+      <AdminFormActions
+        isEdit={isEdit}
+        createLabel='Create Role'
+        isSubmitting={isSubmitting}
+        isDirty={isDirty}
+        onBack={() => router.push('/admin/roles')}
+        onDiscard={discardChanges}
+      />
+    </form>
   );
 }
