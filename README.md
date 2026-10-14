@@ -214,25 +214,25 @@ Follow the users or roles module:
 
 ## Backend Integration
 
-| Endpoint                            | Used for                                            |
-| ----------------------------------- | --------------------------------------------------- |
-| `POST /auth/login`                  | Sign in; sets the refresh cookie                    |
-| `POST /auth/refresh`                | New access token; rotates the refresh cookie        |
-| `POST /auth/logout`                 | Revoke the refresh token                            |
-| `POST /auth/request-password-reset` | Email a reset link (same answer for unknown emails) |
-| `POST /auth/reset-password`         | `{ token, newPassword }`; ends every session        |
-| `GET/PUT /profile`                  | Session user; update name, password, avatar         |
-| `GET/POST /users`                   | List and create users (multipart)                   |
-| `GET/PUT/DELETE /users/:slug`       | Read, update (multipart), delete a user             |
-| `GET/POST /roles`                   | List and create roles                               |
-| `GET/PUT/DELETE /roles/:slug`       | Read, update, delete a role                         |
-| `GET /roles/access-list`            | Permission matrix                                   |
-| `GET /roles/user-types`             | User types a role may have                          |
-| `GET /activity-logs`                | List activity logs                                  |
-| `GET /activity-logs/:id`            | Activity log detail                                 |
-| `GET /utils/role-options`           | Role options (`{ value: id, label }`)               |
+| Endpoint                            | Used for                                                       |
+| ----------------------------------- | -------------------------------------------------------------- |
+| `POST /auth/login`                  | Sign in; sets the refresh cookie                               |
+| `POST /auth/refresh`                | New access token; rotates the refresh cookie                   |
+| `POST /auth/logout`                 | Revoke the refresh token                                       |
+| `POST /auth/request-password-reset` | Email a reset link (same answer for unknown emails)            |
+| `POST /auth/reset-password`         | `{ token, newPassword }`; ends every session                   |
+| `GET/PUT /profile`                  | Session user; update name, password, avatar                    |
+| `GET/POST /users`                   | List (without the signed-in user) and create users (multipart) |
+| `GET/PUT/DELETE /users/:slug`       | Read, update (multipart), delete a user                        |
+| `GET/POST /roles`                   | List and create roles                                          |
+| `GET/PUT/DELETE /roles/:slug`       | Read, update, delete a role                                    |
+| `GET /roles/access-list`            | Permission matrix                                              |
+| `GET /roles/user-types`             | User types a role may have                                     |
+| `GET /activity-logs`                | List activity logs                                             |
+| `GET /activity-logs/:id`            | Activity log detail                                            |
+| `GET /utils/role-options`           | Role options (`{ value: id, label }`)                          |
 
-Responses use `{ success, message, data }`; lists put rows in `data.data` with `data.meta`. Validation errors carry `errors: [{ field, message }]` on every 4xx, and the forms show them next to the matching field. Single-user payloads have no internal `id`; users and roles are addressed by `slug`.
+Responses use `{ success, message, data }`; lists put rows in `data.data` with `data.meta`. Validation errors (400) carry `errors: [{ field, message }]`, which the forms show next to the matching field; other client errors, such as a taken email or a used reset token, carry only `message`, shown in a toast or alert. Single-user payloads have no internal `id`; users and roles are addressed by `slug`.
 
 ## Security
 
@@ -249,6 +249,7 @@ Responses use `{ success, message, data }`; lists put rows in `data.data` with `
 - **Refresh is single-flight per tab.** Two tabs may refresh with the same cookie at the same time. express-core's grace window (`REFRESH_GRACE_SECONDS`) accepts the second request; one that arrives after the window ends the session on that device.
 - **React Compiler and react-hook-form.** Every `reset()` empties react-hook-form's list of mounted fields, which `register()` refills on render. The compiler memoizes those calls, so a later `reset(..., { keepFieldsRef: true })` no longer writes into the inputs. The admin forms opt out with `'use no memo'`.
 - **`MEDIA_URL` is build-time.** Image hosts are compiled into the build; changing them needs a rebuild.
+- **`next/image` refuses private IPs.** Next 16 does not optimize images whose host resolves to a loopback or private address (`images.dangerouslyAllowLocalIP`, off by default against SSRF), so a production build talking to a backend on `localhost` or a private network answers 400 for its media. The core screens show avatars with plain `<img>` and are not affected; use `unoptimized` or a public media host for `next/image`.
 - **Dependency advisories.** `npm audit --omit=dev` reports advisories in `next`, `axios`, Tiptap/ProseMirror and transitive packages. Updating them is a separate maintenance decision; check `npm audit` before a release.
 
 ## License
